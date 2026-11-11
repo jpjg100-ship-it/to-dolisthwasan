@@ -3,29 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>화산파 수련 일지 | Mount Hua Sect To-Do</title>
+  <title>화산파 수련 일지 | 華山派 修練日誌</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 구글 폰트 (동양풍 명조체 및 무협 붓글씨 폰트) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Yuji+Boku&display=swap" rel="stylesheet">
+
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            serif: ['"Noto Serif KR"', 'serif'],
+            serifKr: ['"Noto Serif KR"', 'serif'],
+            calli: ['"Yuji Boku"', '"Noto Serif KR"', 'serif'],
           },
           colors: {
-            plum: {
-              400: '#fb7185',
-              500: '#f43f5e',
-              600: '#e11d48',
-              800: '#9f1239',
-              900: '#881337',
-            },
-            ink: '#111111',
-            paper: '#fafaf9',
+            hwasan: {
+              black: '#0c0e12',
+              dark: '#14171d',
+              paper: '#f9f5f0',
+              plum: '#f43f5e',
+              plumDark: '#9f1239',
+              plumLight: '#fda4af',
+              plumBg: '#ffe4e6',
+              purple: '#7e22ce',
+              gold: '#eab308',
+              jade: '#059669',
+            }
           }
         }
       }
@@ -33,840 +39,1298 @@
   </script>
 
   <style>
-    body {
-      background-color: #1a1a1a;
-      color: #e5e5e5;
-      overflow-x: hidden;
-    }
-    
-    /* 붓글씨 먹물 그림자 효과 */
-    .ink-shadow {
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(225, 29, 72, 0.3);
-    }
-    
-    .border-ink {
-      border: 2px solid #333;
-      box-shadow: 2px 2px 0px #000, -1px -1px 0px #444;
+    /* 화산파 매화 테마 패턴 */
+    .plum-pattern {
+      background-size: 28px 28px;
+      background-image: 
+        radial-gradient(circle at 14px 14px, #f43f5e 14%, transparent 16%),
+        radial-gradient(circle at 0px 0px, #be123c 14%, transparent 16%),
+        radial-gradient(circle at 28px 28px, #be123c 14%, transparent 16%);
+      background-color: #1a0f14;
     }
 
-    /* 매화검기 베기 애니메이션 */
+    /* 자하진기(紫霞眞氣) 보랏빛 도가 테마 */
+    .zaha-pattern {
+      background: linear-gradient(135deg, #3b0764 0%, #6b21a8 40%, #9333ea 70%, #d8b4fe 100%);
+    }
+
+    /* 흑묵(黑墨) 심검 테마 */
+    .ink-pattern {
+      background: linear-gradient(135deg, #090a0f 0%, #1e293b 50%, #0f172a 100%);
+    }
+
+    /* 청명 백의매화 테마 */
+    .baekui-pattern {
+      background: linear-gradient(90deg, #9f1239 50%, #0f172a 50%);
+    }
+
+    /* 동양풍 두루마리 테두리 */
+    .scroll-border {
+      border: 2px solid #a16207;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.7);
+    }
+
+    /* 무협 먹물 붓글씨 그림자 */
+    .ink-shadow {
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9), 0 0 12px rgba(244, 63, 94, 0.45);
+    }
+
+    /* 십삼간 매화검기 베기 애니메이션 */
     @keyframes plumSlash {
-      0% { transform: scaleX(0) rotate(-2deg); opacity: 0; }
-      20% { opacity: 1; }
-      100% { transform: scaleX(1.1) rotate(-2deg); opacity: 0.8; }
+      0% {
+        transform: scaleX(0);
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        transform: scaleX(1);
+        opacity: 0.85;
+      }
     }
 
     .slash-effect {
       position: relative;
     }
-    
     .slash-effect::after {
       content: '';
       position: absolute;
       top: 50%;
-      left: -5%;
-      width: 110%;
-      height: 4px;
-      background: linear-gradient(90deg, transparent, #fb7185, #e11d48, #fb7185, transparent);
-      box-shadow: 0 0 12px #f43f5e, 0 0 4px #fff;
-      transform-origin: left center;
-      animation: plumSlash 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    /* 완료된 항목 흐리게 */
-    .task-completed {
-      opacity: 0.6;
-      filter: grayscale(0.4);
-      transition: all 0.3s ease;
-    }
-
-    /* 드래그 앤 드롭 스타일 */
-    .draggable {
-      cursor: grab;
-    }
-    .draggable:active {
-      cursor: grabbing;
-    }
-    .drag-over {
-      border-top: 2px dashed #fb7185 !important;
-      opacity: 0.7;
-    }
-
-    /* 캔버스 배경 */
-    #plumCanvas {
-      position: fixed;
-      top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      z-index: -1;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #fda4af, #f43f5e, #e11d48, transparent);
+      box-shadow: 0 0 10px #f43f5e;
+      transform-origin: left;
+      animation: plumSlash 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    
+
+    /* 드래그 상태 */
+    .dragging {
+      opacity: 0.4;
+      border: 2px dashed #f43f5e !important;
+      transform: scale(0.98);
+    }
+
+    .drag-over {
+      border-top: 3px solid #fda4af !important;
+    }
+
     /* 스크롤바 커스텀 */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #1a1a1a; }
-    ::-webkit-scrollbar-thumb { background: #881337; border-radius: 4px; }
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f1217;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #9f1239;
+    }
   </style>
 </head>
-<body class="font-serif min-h-screen relative flex flex-col items-center py-10 px-4">
+<body class="bg-stone-950 text-stone-200 font-serifKr min-h-screen relative overflow-x-hidden selection:bg-rose-900 selection:text-white">
 
-  <!-- 매화꽃 흩날리는 캔버스 -->
-  <canvas id="plumCanvas"></canvas>
+  <!-- 흩날리는 매화 꽃잎(Plum Blossom Petals) & 도가 검기 캔버스 배경 -->
+  <canvas id="petalCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
 
-  <div class="w-full max-w-2xl z-10 relative">
+  <div class="relative z-10 max-w-3xl mx-auto px-4 py-8 md:py-12 flex flex-col min-h-screen">
     
-    <!-- 화산파 매화문양 배경 워터마크 (SVG) -->
-    <svg viewBox="0 0 100 100" class="absolute top-40 left-1/2 -translate-x-1/2 w-96 h-96 opacity-[0.07] pointer-events-none -z-10" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="plumGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#f43f5e" />
-          <stop offset="100%" stop-color="#9f1239" />
-        </radialGradient>
-      </defs>
-      <!-- 매화 5개의 꽃잎과 암술/수술 묘사 -->
-      <g fill="url(#plumGrad)" transform="translate(50, 50) scale(1.1)">
-        <circle cx="0" cy="-25" r="20" />
-        <circle cx="24" cy="-8" r="20" />
-        <circle cx="15" cy="20" r="20" />
-        <circle cx="-15" cy="20" r="20" />
-        <circle cx="-24" cy="-8" r="20" />
-        <circle cx="0" cy="0" r="15" fill="#1a1a1a"/>
-        <path d="M0,0 L0,-15 M0,0 L14,-4 M0,0 L9,12 M0,0 L-9,12 M0,0 L-14,-4" stroke="#f43f5e" stroke-width="2"/>
-        <circle cx="0" cy="0" r="4" fill="#f43f5e"/>
-      </g>
-    </svg>
+    <!-- 상단 헤더 & 컨트롤 영역 -->
+    <header class="mb-6 text-center relative">
+      <!-- 상단 리본 패턴 -->
+      <div id="themeBanner" class="plum-pattern h-5 w-full rounded-t-lg shadow-md transition-all duration-500"></div>
 
-    <!-- 헤더 & 타이틀 -->
-    <header class="text-center mb-8 bg-black/50 p-6 rounded-xl border-ink backdrop-blur-sm relative">
-      <!-- 상단 컨트롤: 음향 토글 및 현재 계급 배지 -->
-      <div class="flex justify-between items-center mb-4 relative z-10">
-        <button onclick="toggleSound()" class="flex items-center gap-2 bg-stone-900 border border-stone-700 hover:border-plum-500 px-3 py-1.5 rounded-full text-xs text-stone-300 transition-all cursor-pointer">
-          <span>음향:</span>
-          <span id="soundStatus" class="text-plum-400 font-bold">ON</span>
-        </button>
+      <div class="bg-stone-900/90 border-x-2 border-b-2 border-rose-950/80 rounded-b-xl p-6 backdrop-blur-sm shadow-2xl relative">
+        <!-- 오디오 효과음 토글 & 전서구 동기화 & 테마 셀렉터 버튼 -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-stone-800 text-xs">
+          <!-- 사운드 토글 및 기기 동기화 버튼 -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="soundToggleBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 transition-colors border border-stone-700 cursor-pointer">
+              <svg id="soundIconOn" class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+              <svg id="soundIconOff" class="w-4 h-4 text-stone-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+              <span id="soundStatusText">매화검명음 ON</span>
+            </button>
 
-        <div class="flex items-center gap-2 bg-stone-900 border border-plum-800/80 px-4 py-1.5 rounded-full text-xs shadow-[0_0_10px_rgba(225,29,72,0.2)]">
-          <span class="text-stone-400">현재 경지:</span>
-          <span id="rankDisplay" class="text-plum-400 font-black text-sm tracking-wider">평제자</span>
-        </div>
-      </div>
+            <!-- 전서구 전령 동기화 버튼 -->
+            <button id="syncModalBtn" onclick="openSyncModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-800 hover:bg-stone-700 text-rose-300 transition-colors border border-rose-900/60 cursor-pointer" title="모바일/PC 기기간 수련 일지 동기화">
+              <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+              <span>전서구 동기화 (기기 연동)</span>
+            </button>
+          </div>
 
-      <!-- 수련생 고유 식별패 (클라우드 동기화 상태) -->
-      <div class="text-[11px] text-stone-500 font-mono mb-3 text-right">
-        수련패 식별자: <span id="userBadge" class="text-stone-400">동기화 연결 중...</span>
-      </div>
-
-      <div class="flex items-center justify-center gap-4 mb-2 relative z-10">
-        <span class="text-plum-600 text-3xl">✿</span>
-        <h1 class="text-4xl md:text-5xl font-black text-white ink-shadow tracking-widest">華山派 修練日誌</h1>
-        <span class="text-plum-600 text-3xl">✿</span>
-      </div>
-      <p class="text-stone-300 text-sm mt-2 relative z-10">대화산파(大華山派) 매화검수의 임무를 기록하라</p>
-
-      <!-- 화산신룡 청명 프로필 섹션 -->
-      <div class="mt-8 mb-4 mx-auto max-w-lg flex flex-col sm:flex-row items-center sm:items-start justify-center gap-4 sm:gap-6 p-5 rounded-xl bg-gradient-to-br from-stone-900 via-stone-800 to-stone-950 border border-stone-700 shadow-[0_4px_20px_rgba(225,29,72,0.2)] relative overflow-hidden z-10">
-        <!-- 붉은 매화 장식선 -->
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-plum-500 to-transparent opacity-60"></div>
-        
-        <!-- 캐릭터 아바타 (src 속성을 원하는 캐릭터 이미지 주소로 교체하시면 됩니다) -->
-        <div class="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-full border-2 border-plum-600 shadow-[0_0_15px_rgba(225,29,72,0.5)] overflow-hidden bg-stone-950 flex items-center justify-center group">
-          <img id="characterAvatar" 
-               src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23111'/%3E%3Ccircle cx='50' cy='50' r='40' fill='%23881337' opacity='0.3'/%3E%3Ctext x='50' y='55' font-size='32' fill='%23f43f5e' text-anchor='middle' dominant-baseline='middle' font-family='serif' font-weight='bold'%3E靑明%3C/text%3E%3C/svg%3E" 
-               alt="청명 이미지" 
-               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer"
-               title="이미지를 교체하려면 HTML 코드 내의 src 주소를 수정하세요">
+          <!-- 테마 선택 -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-stone-400 text-xs hidden sm:inline">문파 기운:</span>
+            <div class="flex items-center gap-1 bg-stone-950 p-1 rounded-lg border border-stone-800">
+              <button onclick="changeTheme('plum')" title="십삼간 매화검 / 화산홍" class="w-6 h-6 rounded bg-rose-800 border border-rose-400 hover:scale-110 transition-transform text-[10px] font-bold cursor-pointer">梅</button>
+              <button onclick="changeTheme('zaha')" title="도가 비전 / 자하진기" class="w-6 h-6 rounded bg-purple-900 border border-purple-400 hover:scale-110 transition-transform text-[10px] font-bold cursor-pointer">紫</button>
+              <button onclick="changeTheme('ink')" title="심검 / 흑묵" class="w-6 h-6 rounded bg-stone-800 border border-stone-500 hover:scale-110 transition-transform text-[10px] font-bold cursor-pointer">墨</button>
+              <button onclick="changeTheme('baekui')" title="화산신룡 / 청명" class="w-6 h-6 rounded bg-red-950 border border-stone-300 hover:scale-110 transition-transform text-[10px] font-bold cursor-pointer">龍</button>
+            </div>
+          </div>
         </div>
 
-        <!-- 텍스트 정보 -->
-        <div class="text-center sm:text-left flex-1 mt-2 sm:mt-0">
-          <p class="text-plum-400 text-xs font-bold tracking-wider mb-1 drop-shadow-[0_0_5px_rgba(225,29,72,0.5)]">화산파(華山派) 십삼대제자(十三代弟子)</p>
-          <h2 class="text-2xl md:text-3xl font-black text-white ink-shadow mb-1 flex flex-col sm:flex-row items-center sm:items-end gap-1 sm:gap-2">
-            화산신룡 청명
-            <span class="text-stone-500 text-sm font-normal pb-1 tracking-widest">華山神龍</span>
-          </h2>
-          <p class="text-stone-400 text-sm italic border-t sm:border-t-0 sm:border-l-2 border-plum-800 pt-3 sm:pt-0 sm:pl-3 mt-3 sm:mt-2 font-light break-keep">
-            "내 화산을 다시 천하제일문으로 만들어주마."
-          </p>
+        <!-- 타이틀 헤더 -->
+        <div class="flex items-center justify-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-rose-950 border-2 border-rose-500 flex items-center justify-center shadow-lg shadow-rose-950/60">
+            <span class="font-calli text-rose-200 text-base">華</span>
+          </div>
+          <h1 class="text-2xl md:text-3xl font-black tracking-widest text-stone-100 ink-shadow">
+            華山派 修練日誌
+          </h1>
+          <div class="w-8 h-8 rounded-full bg-rose-950 border-2 border-rose-500 flex items-center justify-center shadow-lg shadow-rose-950/60">
+            <span class="font-calli text-rose-200 text-base">山</span>
+          </div>
+        </div>
+        <p class="text-stone-400 text-xs md:text-sm mt-1 tracking-wider">
+          구파의 으뜸 대화산파(大華山派) · "피어라, 매화여. 화산의 검은 결코 꺾이지 않는다."
+        </p>
+
+        <!-- 화산파 제자 경지(계급) 게이지 -->
+        <div class="mt-5 bg-stone-950/80 p-3.5 rounded-lg border border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <div id="rankBadge" class="px-3 py-1 rounded bg-rose-950/80 border border-rose-600 text-rose-300 font-bold text-sm tracking-widest flex items-center gap-1 shadow">
+              <span class="text-xs text-rose-500">경지:</span>
+              <span id="rankTitle">三代弟子 (삼대제자)</span>
+            </div>
+            <div class="text-left text-xs text-stone-400">
+              <span id="taskStats">수련 완수: 0 / 총 0과</span>
+            </div>
+          </div>
+
+          <!-- 진행률 바 -->
+          <div class="w-full sm:w-60 bg-stone-900 h-3 rounded-full overflow-hidden border border-stone-800 relative">
+            <div id="progressBar" class="bg-gradient-to-r from-rose-800 via-rose-500 to-amber-400 h-full w-0 transition-all duration-500"></div>
+          </div>
         </div>
       </div>
-
-      <!-- 계급 진척도 바 -->
-      <div class="mt-6 w-full bg-stone-800 rounded-full h-3 border border-stone-700 relative overflow-hidden z-10">
-        <div id="rankProgressBar" class="bg-gradient-to-r from-plum-900 to-plum-500 h-3 rounded-full transition-all duration-700 w-0 shadow-[0_0_10px_#e11d48]"></div>
-      </div>
-      <p id="rankProgressText" class="text-xs text-stone-400 mt-2 text-right">완수: 0 / 다음 경지: 5</p>
     </header>
 
-    <!-- 임무 하달 (입력창) -->
-    <div class="flex gap-2 mb-6 shadow-lg shadow-plum-900/20">
-      <input type="text" id="taskInput" 
-        class="flex-1 bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-plum-500 focus:ring-1 focus:ring-plum-500 transition-all font-bold placeholder-stone-600" 
-        placeholder="새로운 수련 임무를 하달받습니다..."
-        onkeypress="handleKeyPress(event)">
-      <button onclick="addTask()" 
-        class="bg-gradient-to-b from-plum-600 to-plum-900 text-white px-6 py-3 rounded-lg font-bold border-2 border-plum-900 hover:from-plum-500 hover:to-plum-800 transition-all shadow-[0_0_15px_rgba(225,29,72,0.4)] whitespace-nowrap">
-        명 받들기
-      </button>
+    <!-- 수련 과제 추가 (입력창) -->
+    <section class="mb-6">
+      <div class="bg-stone-900/90 border border-rose-950/60 rounded-xl p-4 shadow-xl backdrop-blur-sm">
+        <form id="todoForm" class="space-y-3">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-grow">
+              <input 
+                type="text" 
+                id="taskInput" 
+                placeholder="장문인 혹은 청명에게 하달받은 수련 내용을 입력하십시오..." 
+                class="w-full bg-stone-950 border border-stone-700 rounded-lg px-4 py-3 text-stone-100 placeholder-stone-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors text-sm"
+                autocomplete="off"
+                required
+              />
+            </div>
+            
+            <!-- 수련 종류/유형 선택 -->
+            <select id="taskCategory" class="bg-stone-950 border border-stone-700 text-stone-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-rose-500 cursor-pointer">
+              <option value="sword">🌸 매화검법 (검술/초식)</option>
+              <option value="inner">🧘 자하진기 (운기조식/내공)</option>
+              <option value="step">🍃 매화유운보 (경공/보법)</option>
+              <option value="study">📜 도가 심법 (학문/심득)</option>
+              <option value="iron">🍶 청명의 특훈 (체력단련/지옥훈련)</option>
+            </select>
+
+            <!-- 수련 하달 버튼 -->
+            <button 
+              type="submit" 
+              class="relative overflow-hidden group bg-gradient-to-r from-rose-900 to-rose-700 hover:from-rose-800 hover:to-rose-600 text-white font-bold px-5 py-3 rounded-lg text-sm transition-all duration-200 shadow-lg shadow-rose-950 flex items-center justify-center gap-2 shrink-0 active:scale-95 cursor-pointer"
+            >
+              <svg class="w-4 h-4 transition-transform group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              <span>명 하달</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 필터 및 제어 바 -->
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-4 px-1 text-xs">
+      <!-- 탭 버튼들 -->
+      <div class="flex items-center gap-1 bg-stone-900 p-1 rounded-lg border border-stone-800">
+        <button onclick="setFilter('all')" id="filterAll" class="px-3 py-1.5 rounded-md font-medium transition-colors bg-stone-800 text-rose-400 cursor-pointer">전체 수련</button>
+        <button onclick="setFilter('active')" id="filterActive" class="px-3 py-1.5 rounded-md font-medium text-stone-400 hover:text-stone-200 transition-colors cursor-pointer">정진 중</button>
+        <button onclick="setFilter('completed')" id="filterCompleted" class="px-3 py-1.5 rounded-md font-medium text-stone-400 hover:text-stone-200 transition-colors cursor-pointer">수련 완수</button>
+      </div>
+
+      <!-- 도움말 문구 및 일괄 삭제 -->
+      <div class="flex items-center gap-2">
+        <span class="text-stone-400 hidden md:inline">💡 항목을 드래그하거나 ▲▼ 버튼으로 수련 순서를 변경할 수 있습니다</span>
+        <button onclick="clearCompletedTasks()" class="text-stone-400 hover:text-rose-400 transition-colors px-2 py-1 rounded bg-stone-900 border border-stone-800 hover:border-rose-900 cursor-pointer">
+          완수 수련 정리
+        </button>
+      </div>
     </div>
 
-    <!-- 임무 목록 -->
-    <ul id="taskList" class="space-y-3">
-      <!-- 동적으로 추가되는 목록 -->
-    </ul>
-    
-    <!-- 비었을 때 메시지 -->
-    <div id="emptyMessage" class="text-center py-12 text-stone-500 hidden">
-      <p class="text-lg">현재 하달된 임무가 없습니다.</p>
-      <p class="text-sm mt-2">수련을 게을리하지 마십시오.</p>
-    </div>
+    <!-- 할 일 목록 (Training Scroll) -->
+    <main class="flex-grow">
+      <ul id="taskList" class="space-y-2.5">
+        <!-- 동적으로 렌더링됩니다 -->
+      </ul>
 
+      <!-- 빈 목록 안내 화면 -->
+      <div id="emptyState" class="hidden text-center py-16 px-4 bg-stone-900/40 rounded-xl border border-dashed border-stone-800">
+        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-stone-900 flex items-center justify-center border border-stone-700">
+          <span class="font-calli text-2xl text-rose-500/70">梅</span>
+        </div>
+        <h3 class="text-stone-300 font-bold text-base mb-1">현재 부여된 수련 과제가 없습니다</h3>
+        <p class="text-stone-400 text-xs">새로운 수련을 하달받아 부지런히 정진하여 매화검존(梅花劍尊)의 경지에 오르십시오.</p>
+      </div>
+    </main>
+
+    <!-- 하단 푸터 -->
+    <footer class="mt-12 text-center text-xs text-stone-400 pt-6 border-t border-stone-800/80">
+      <p>대화산파 태상문 (大華山派 太上門) · 매화는 추위를 겪지 않고서는 향기를 품지 못한다</p>
+    </footer>
   </div>
 
-  <!-- 데이터 영구 보존 및 클라우드 연동 모듈 -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <!-- 맞춤 알림 토스트 (alert 미사용 규정 준수) -->
+  <div id="toast" class="fixed bottom-6 right-6 transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 px-4 py-3 rounded-lg bg-stone-900 border border-amber-600 text-stone-100 shadow-2xl shadow-black">
+    <div id="toastIcon" class="text-amber-400 text-base">⚔️</div>
+    <span id="toastMsg" class="text-sm font-medium">알림 메시지</span>
+  </div>
 
-    // --- 기본 상태 관리 ---
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'to-dolisthwasan';
-    let db = null;
-    let auth = null;
-    let user = null;
-    let userId = null;
+  <!-- 전령 동기화 모달 (4자리 간편 번호 연동) -->
+  <div id="syncModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-stone-900 border-2 border-amber-700/80 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl relative scroll-border max-h-[90vh] overflow-y-auto">
+      <!-- 헤더 -->
+      <div class="flex items-center justify-between border-b border-stone-800 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-red-900 border border-red-500 flex items-center justify-center shadow">
+            <span class="font-calli text-white text-xs">令</span>
+          </div>
+          <h3 class="text-base font-bold text-stone-100 tracking-wider">귀살대 4자리 전령 동기화</h3>
+        </div>
+        <button onclick="closeSyncModal()" class="text-stone-400 hover:text-stone-100 p-1 rounded-lg hover:bg-stone-800 text-base cursor-pointer">✕</button>
+      </div>
 
-    let tasks = [
-      { id: 'mock1', text: '매화검법(梅花劍法) 1초식 수련', completed: false, order: 0 },
-      { id: 'mock2', text: '연무장 바닥 쓸고 물 긷기', completed: false, order: 1 },
-      { id: 'mock3', text: '청명 사형 피해서 도망치기', completed: false, order: 2 },
-      { id: 'mock4', text: '낙양(洛陽) 은하상단 호위 임무', completed: false, order: 3 }
-    ];
+      <p class="text-xs text-stone-400 mb-4 leading-relaxed">
+        복잡하고 긴 텍스트 없이, <strong>4자리 숫자 번호</strong>만으로 모바일과 PC 간에 임무 일지를 즉시 주고받을 수 있습니다.
+      </p>
+
+      <!-- 1. 보내기 영역 -->
+      <div class="mb-4 bg-stone-950 p-4 rounded-xl border border-stone-800">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+            <span>📤</span> 1. 이 기기의 일지 보내기
+          </label>
+          <button onclick="regenerate4DigitPin()" class="text-[11px] text-stone-400 hover:text-amber-400 flex items-center gap-1 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>새 번호 생성</span>
+          </button>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center gap-2.5">
+          <div class="w-full sm:w-1/2 flex items-center justify-center bg-stone-900 border border-amber-600/70 rounded-lg py-2 px-3">
+            <span class="text-xs text-stone-400 mr-2 shrink-0">전령 암호:</span>
+            <input id="sendPinInput" type="text" maxlength="4" class="w-20 bg-transparent text-center font-mono font-black text-xl text-amber-300 tracking-widest focus:outline-none" />
+          </div>
+          <button id="sendBtn" onclick="uploadBy4DigitPin()" class="w-full sm:w-1/2 py-2.5 px-4 rounded-lg bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-600 hover:to-amber-500 text-stone-100 text-xs font-bold transition-all shadow flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            <span id="sendBtnText">이 번호로 일지 전송</span>
+          </button>
+        </div>
+        <div id="sendFeedback" class="mt-2 text-[11px] text-stone-400 hidden"></div>
+      </div>
+
+      <!-- 2. 받기 영역 -->
+      <div class="mb-4 bg-stone-950 p-4 rounded-xl border border-stone-800">
+        <label class="block text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
+          <span>📥</span> 2. 다른 기기에서 일지 받기
+        </label>
+        <div class="flex flex-col sm:flex-row items-center gap-2.5">
+          <div class="w-full sm:w-1/2 flex items-center justify-center bg-stone-900 border border-stone-700 focus-within:border-emerald-500 rounded-lg py-2 px-3">
+            <span class="text-xs text-stone-400 mr-2 shrink-0">번호 입력:</span>
+            <input id="receivePinInput" type="text" maxlength="4" placeholder="4자리" class="w-20 bg-transparent text-center font-mono font-black text-xl text-emerald-300 placeholder-stone-600 tracking-widest focus:outline-none" />
+          </div>
+          <button id="receiveBtn" onclick="downloadBy4DigitPin()" class="w-full sm:w-1/2 py-2.5 px-4 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-emerald-100 text-xs font-bold transition-all shadow flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <span id="receiveBtnText">4자리 번호로 일지 받기</span>
+          </button>
+        </div>
+        <div id="receiveFeedback" class="mt-2 text-[11px] text-stone-400 hidden"></div>
+      </div>
+
+      <!-- 3. 수동 전체 코드 백업 (오프라인/대체용 토글) -->
+      <details class="text-xs text-stone-500">
+        <summary class="cursor-pointer hover:text-stone-300 select-none pb-1">
+          📜 수동 전체 텍스트 복사/붙여넣기 (오프라인용)
+        </summary>
+        <div class="mt-2 space-y-2 bg-stone-950 p-3 rounded-lg border border-stone-800 text-[11px]">
+          <div class="flex gap-1.5">
+            <input id="exportCodeInput" type="text" readonly class="flex-grow bg-stone-900 border border-stone-700 rounded px-2 py-1 text-stone-400 font-mono text-[10px]" />
+            <button onclick="copySyncCode()" class="px-2 py-1 bg-stone-800 hover:bg-stone-700 rounded text-stone-300 shrink-0 cursor-pointer">복사</button>
+          </div>
+          <div class="flex gap-1.5">
+            <input id="importCodeInput" type="text" placeholder="긴 코드 직접 붙여넣기" class="flex-grow bg-stone-900 border border-stone-700 rounded px-2 py-1 text-stone-300 font-mono text-[10px]" />
+            <button onclick="applyManualCode()" class="px-2 py-1 bg-stone-800 hover:bg-stone-700 rounded text-stone-300 shrink-0 cursor-pointer">적용</button>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+     * 1. 전역 상태 및 데이터 관리
+     * ========================================================= */
+    const STORAGE_KEY = 'hwasan_tasks_data';
+    const THEME_KEY = 'hwasan_theme_key';
+    const SOUND_KEY = 'hwasan_sound_key';
+
+    let currentFilter = 'all'; // 'all' | 'active' | 'completed'
     let soundEnabled = true;
-    let completedTotalCount = 0;
+    let currentTheme = 'plum';
+    let draggedItemIndex = null;
 
-    // 화산파 계급 시스템
-    const ranks = [
-      { name: '평제자', req: 0 },
-      { name: '삼대제자', req: 3 },
-      { name: '이대제자', req: 8 },
-      { name: '일대제자', req: 15 },
-      { name: '장로', req: 25 },
-      { name: '장문인', req: 40 }
+    // 화산파 문하 제자 경지 목록
+    const RANKS = [
+      { min: 0, title: '三代弟子 (삼대제자)', color: 'text-stone-400', badge: 'border-stone-600' },
+      { min: 2, title: '二代弟子 (이대제자)', color: 'text-rose-400', badge: 'border-rose-700' },
+      { min: 5, title: '一代弟子 (일대제자)', color: 'text-rose-300', badge: 'border-rose-500' },
+      { min: 9, title: '執事 (집사)', color: 'text-purple-400', badge: 'border-purple-600' },
+      { min: 14, title: '長老 (장로)', color: 'text-amber-400', badge: 'border-amber-500' },
+      { min: 20, title: '掌門人 (장문인)', color: 'text-orange-400', badge: 'border-orange-500' },
+      { min: 28, title: '梅花劍尊 (매화검존)', color: 'text-rose-300 font-extrabold', badge: 'border-rose-500 shadow-rose-900/70 shadow-lg' }
     ];
 
-    // --- Web Audio API (매화검기 효과음) ---
-    let audioCtx = null;
+    // 수련 종류 정보
+    const CATEGORIES = {
+      sword: { label: '매화검법', icon: '🌸', color: 'bg-rose-950/70 text-rose-300 border-rose-800' },
+      inner: { label: '자하진기', icon: '🧘', color: 'bg-purple-950/70 text-purple-300 border-purple-800' },
+      step: { label: '매화유운보', icon: '🍃', color: 'bg-emerald-950/70 text-emerald-300 border-emerald-800' },
+      study: { label: '도가심법', icon: '📜', color: 'bg-amber-950/70 text-amber-300 border-amber-800' },
+      iron: { label: '청명특훈', icon: '🍶', color: 'bg-red-950/70 text-red-300 border-red-800' }
+    };
 
-    function playSlashSound() {
-      if (!soundEnabled) return;
-      try {
-        if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
+    // 기본 초기 샘플 데이터
+    const defaultTasks = [
+      { id: 1710000001, text: '새벽 연무장 매화검법 기본 초식 1,000회 연마', category: 'sword', completed: true, createdAt: '묘시(卯時)' },
+      { id: 1710000002, text: '자하진기 운기조식 및 단전 내력 순환 1주천', category: 'inner', completed: false, createdAt: '사시(巳時)' },
+      { id: 1710000003, text: '백천 사형과 함께 화산 입구 계단 달리기 50회 왕복', category: 'iron', completed: false, createdAt: '오시(午時)' },
+      { id: 1710000004, text: '매화유운보를 활용한 낙화(落花) 보법 체득', category: 'step', completed: false, createdAt: '유시(酉時)' }
+    ];
 
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
-      } catch (e) {
-        console.log("오디오 재생 불가:", e);
-      }
-    }
+    let tasks = loadTasks();
 
-    function toggleSound() {
-      soundEnabled = !soundEnabled;
-      const statusSpan = document.getElementById('soundStatus');
-      if (statusSpan) {
-        if (soundEnabled) {
-          statusSpan.innerText = 'ON';
-          statusSpan.className = 'text-plum-400 font-bold';
-        } else {
-          statusSpan.innerText = 'OFF';
-          statusSpan.className = 'text-stone-500 font-bold';
-        }
-      }
-    }
-
-    // --- 브라우저 자체 영구 보존 엔진 (IndexedDB) ---
-    const DB_NAME = 'HwasanTodoDB';
-    const DB_VERSION = 1;
-    let localDB = null;
-
-    function initLocalDatabase() {
-      return new Promise((resolve) => {
-        if (!window.indexedDB) {
-          resolve(null);
-          return;
-        }
-        const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const dbInstance = e.target.result;
-          if (!dbInstance.objectStoreNames.contains('tasks')) {
-            dbInstance.createObjectStore('tasks', { keyPath: 'id' });
+    /* =========================================================
+     * 2. 사운드 시스템 (Web Audio API - 외부 음원 의존 없음)
+     * ========================================================= */
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
           }
-          if (!dbInstance.objectStoreNames.contains('stats')) {
-            dbInstance.createObjectStore('stats', { keyPath: 'key' });
-          }
-        };
-        request.onsuccess = (e) => {
-          localDB = e.target.result;
-          resolve(localDB);
-        };
-        request.onerror = () => {
-          resolve(null);
-        };
-      });
-    }
-
-    function loadFromLocalDatabase() {
-      return new Promise((resolve) => {
-        if (!localDB) {
-          resolve(false);
-          return;
         }
+      },
+      // 십삼간 매화검기 베기 효과음 (Slash)
+      playSlash() {
+        if (!soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
         try {
-          const tx = localDB.transaction(['tasks', 'stats'], 'readonly');
-          const taskStore = tx.objectStore('tasks');
-          const statsStore = tx.objectStore('stats');
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+          const now = this.ctx.currentTime;
+          
+          const bufferSize = Math.floor(this.ctx.sampleRate * 0.16);
+          const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+          }
 
-          const tasksReq = taskStore.getAll();
-          const statsReq = statsStore.get('completedTotalCount');
+          const whiteNoise = this.ctx.createBufferSource();
+          whiteNoise.buffer = noiseBuffer;
 
-          tx.oncomplete = () => {
-            let hasLoadedData = false;
-            if (tasksReq.result && tasksReq.result.length > 0) {
-              tasks = tasksReq.result;
-              tasks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-              hasLoadedData = true;
-            }
-            if (statsReq.result && typeof statsReq.result.val === 'number') {
-              completedTotalCount = statsReq.result.val;
-            }
-            resolve(hasLoadedData);
-          };
-          tx.onerror = () => resolve(false);
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(3600, now);
+          filter.frequency.exponentialRampToValueAtTime(750, now + 0.15);
+          filter.Q.setValueAtTime(3.2, now);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.38, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+          whiteNoise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          // 화산파 특유의 맑은 매화검기 울림음
+          const osc = this.ctx.createOscillator();
+          const oscGain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1400, now);
+          osc.frequency.exponentialRampToValueAtTime(350, now + 0.14);
+
+          oscGain.gain.setValueAtTime(0.22, now);
+          oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+          osc.connect(oscGain);
+          oscGain.connect(this.ctx.destination);
+
+          whiteNoise.start(now);
+          osc.start(now);
+          osc.stop(now + 0.16);
         } catch (e) {
-          resolve(false);
+          console.error(e);
         }
-      });
-    }
+      },
+      // 검집 거치음 / 수련 상태 복원음
+      playSheathe() {
+        if (!soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
 
-    function saveLocalTask(task) {
-      if (!localDB) return;
-      try {
-        const tx = localDB.transaction('tasks', 'readwrite');
-        tx.objectStore('tasks').put(task);
-      } catch (e) {}
-    }
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(1040, now + 0.08);
 
-    function deleteLocalTask(id) {
-      if (!localDB) return;
-      try {
-        const tx = localDB.transaction('tasks', 'readwrite');
-        tx.objectStore('tasks').delete(id);
-      } catch (e) {}
-    }
+          gain.gain.setValueAtTime(0.24, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
-    function saveAllLocalTasks() {
-      if (!localDB) return;
-      try {
-        const tx = localDB.transaction('tasks', 'readwrite');
-        const store = tx.objectStore('tasks');
-        store.clear();
-        tasks.forEach(t => store.put(t));
-      } catch (e) {}
-    }
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
 
-    function saveLocalStats() {
-      if (!localDB) return;
-      try {
-        const tx = localDB.transaction('stats', 'readwrite');
-        tx.objectStore('stats').put({ key: 'completedTotalCount', val: completedTotalCount });
-      } catch (e) {}
-    }
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } catch (e) {}
+      },
+      // 수련 하달 북소리 / 운기음
+      playDrum() {
+        if (!soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
 
-    // --- 클라우드 & 로컬 통합 스토리지 초기화 ---
-    async function initStorage() {
-      const userBadge = document.getElementById('userBadge');
-      
-      // 1. 브라우저 영구 보존 엔진 초기화 및 기존 수련 일지 복원
-      await initLocalDatabase();
-      const hasSavedData = await loadFromLocalDatabase();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(50, now + 0.28);
 
-      if (!hasSavedData) {
-        // 첫 방문 시 기본 임무를 브라우저에 저장
-        saveAllLocalTasks();
-        saveLocalStats();
+          gain.gain.setValueAtTime(0.42, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.29);
+        } catch (e) {}
       }
+    };
 
+    /* =========================================================
+     * 3. 로컬 스토리지 & IndexedDB 이중 영구 보존 엔진
+     * ========================================================= */
+    function loadTasks() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw !== null) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {
+        console.warn('localStorage 접근 실패, 기본 데이터 로드:', e);
+      }
+      return defaultTasks;
+    }
+
+    function saveTasks() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      } catch (e) {
+        console.error('localStorage 저장 실패:', e);
+      }
+      // IndexedDB 비동기 백업
+      saveToIndexedDB(tasks);
       renderTasks();
-      updateEmptyMessage();
-      updateRank();
-
-      // 2. 외부 배포 환경(GitHub Pages)인 경우 안내 배지 표시
-      if (typeof __firebase_config === 'undefined') {
-        if (userBadge) {
-          userBadge.innerText = '수련생 처소 (브라우저 영구 보존 중)';
-        }
-        return;
-      }
-
-      // 3. 클라우드 설정이 존재하는 환경일 경우 실시간 클라우드 동기화 수행
-      try {
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-
-        user = auth.currentUser;
-        userId = user ? user.uid : crypto.randomUUID();
-        if (userBadge) {
-          userBadge.innerText = userId;
-        }
-
-        const tasksCol = collection(db, 'artifacts', appId, 'users', userId, 'tasks');
-        const tasksQuery = query(tasksCol);
-
-        onSnapshot(tasksQuery, async (snapshot) => {
-          if (snapshot.empty) {
-            for (let i = 0; i < tasks.length; i++) {
-              const item = tasks[i];
-              const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', item.id);
-              await setDoc(docRef, item);
-            }
-          } else {
-            const fetched = [];
-            snapshot.forEach((snap) => fetched.push(snap.data()));
-            fetched.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-            tasks = fetched;
-            saveAllLocalTasks();
-            renderTasks();
-            updateEmptyMessage();
-          }
-        }, (err) => console.error("클라우드 임무 동기화 실패:", err));
-
-        const statsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'stats');
-        onSnapshot(statsDocRef, (snap) => {
-          if (snap.exists()) {
-            const data = snap.data();
-            if (typeof data.completedTotalCount === 'number') {
-              completedTotalCount = data.completedTotalCount;
-              saveLocalStats();
-              updateRank();
-            }
-          }
-        }, (err) => console.error("클라우드 경지 동기화 실패:", err));
-
-      } catch (err) {
-        console.warn("클라우드 연동 건너뜀 (로컬 영구 모드로 동작):", err);
-        if (userBadge) userBadge.innerText = '수련생 처소 (브라우저 영구 보존 중)';
-      }
+      updateRankAndStats();
     }
 
-    // --- 할 일(임무) 조작 로직 ---
-    function handleKeyPress(e) {
-      if (e.key === 'Enter') {
-        addTask();
-      }
-    }
-
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
-
-    async function addTask() {
-      const input = document.getElementById('taskInput');
-      const text = input.value.trim();
-      if (!text) return;
-
-      const newTask = {
-        id: generateId(),
-        text: text,
-        completed: false,
-        order: tasks.length > 0 ? Math.min(...tasks.map(t => t.order ?? 0)) - 1 : 0
+    // IndexedDB 비동기 백업 시스템 (GitHub Pages 안정성 보장)
+    function initIndexedDBBackup() {
+      if (!window.indexedDB) return;
+      const req = window.indexedDB.open('HwasanSectDB', 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('backup')) {
+          db.createObjectStore('backup', { keyPath: 'id' });
+        }
       };
-
-      tasks.unshift(newTask);
-      input.value = '';
-      renderTasks();
-      updateEmptyMessage();
-
-      // 브라우저 영구 보존
-      saveLocalTask(newTask);
-
-      // 클라우드 저장
-      if (user && db) {
+      req.onsuccess = (e) => {
+        const db = e.target.result;
         try {
-          const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', newTask.id);
-          await setDoc(docRef, newTask);
-        } catch (err) {
-          console.error("클라우드 임무 저장 실패:", err);
-        }
-      }
+          const tx = db.transaction('backup', 'readonly');
+          const getReq = tx.objectStore('backup').get('tasks');
+          getReq.onsuccess = () => {
+            if (getReq.result && Array.isArray(getReq.result.data)) {
+              const raw = localStorage.getItem(STORAGE_KEY);
+              if (!raw) {
+                tasks = getReq.result.data;
+                renderTasks();
+                updateRankAndStats();
+              }
+            }
+          };
+        } catch (err) {}
+      };
     }
 
-    async function toggleTask(id) {
-      const taskIndex = tasks.findIndex(t => t.id === id);
-      if (taskIndex === -1) return;
-
-      const task = tasks[taskIndex];
-      const isCompleting = !task.completed;
-      task.completed = isCompleting;
-
-      const li = document.getElementById(`task-${id}`);
-      if (li) {
-        if (isCompleting) {
-          playSlashSound();
-          completedTotalCount++;
-          updateRank();
-          const textSpan = li.querySelector('.task-text');
-          if (textSpan) textSpan.classList.add('slash-effect');
-          li.classList.add('task-completed');
-        } else {
-          const textSpan = li.querySelector('.task-text');
-          if (textSpan) textSpan.classList.remove('slash-effect');
-          li.classList.remove('task-completed');
-          completedTotalCount = Math.max(0, completedTotalCount - 1);
-          updateRank();
-        }
-
-        const checkbox = li.querySelector('.custom-checkbox');
-        if (checkbox) {
-          if (isCompleting) {
-            checkbox.innerHTML = '<span class="text-plum-400">✿</span>';
-            checkbox.classList.add('border-plum-500');
-          } else {
-            checkbox.innerHTML = '';
-            checkbox.classList.remove('border-plum-500');
-          }
-        }
-      }
-
-      // 브라우저 영구 보존
-      saveLocalTask(task);
-      saveLocalStats();
-
-      // 클라우드 저장
-      if (user && db) {
-        try {
-          const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', id);
-          await updateDoc(docRef, { completed: task.completed });
-
-          const statsRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'stats');
-          await setDoc(statsRef, { completedTotalCount }, { merge: true });
-        } catch (err) {
-          console.error("클라우드 임무 갱신 실패:", err);
-        }
-      }
-    }
-
-    async function deleteTask(id) {
-      const li = document.getElementById(`task-${id}`);
-      if (li) {
-        li.style.transform = 'scale(0.9)';
-        li.style.opacity = '0';
-      }
-      
-      setTimeout(async () => {
-        tasks = tasks.filter(t => t.id !== id);
-        renderTasks();
-        updateEmptyMessage();
-
-        // 브라우저 영구 삭제
-        deleteLocalTask(id);
-
-        // 클라우드 삭제
-        if (user && db) {
-          try {
-            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', id);
-            await deleteDoc(docRef);
-          } catch (err) {
-            console.error("클라우드 임무 삭제 실패:", err);
-          }
-        }
-      }, 200);
-    }
-
-    async function syncOrders() {
-      // 브라우저 순서 보존
-      saveAllLocalTasks();
-
-      // 클라우드 순서 보존
-      if (!user || !db) return;
+    function saveToIndexedDB(tasksData) {
+      if (!window.indexedDB) return;
       try {
-        for (let i = 0; i < tasks.length; i++) {
-          tasks[i].order = i;
-          const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', tasks[i].id);
-          await updateDoc(docRef, { order: i });
-        }
-      } catch (err) {
-        console.error("순서 동기화 실패:", err);
-      }
+        const req = window.indexedDB.open('HwasanSectDB', 1);
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          const tx = db.transaction('backup', 'readwrite');
+          tx.objectStore('backup').put({ id: 'tasks', data: tasksData });
+        };
+      } catch (e) {}
     }
 
-    function moveTask(index, direction) {
-      if (direction === -1 && index > 0) {
-        [tasks[index - 1], tasks[index]] = [tasks[index], tasks[index - 1]];
-      } else if (direction === 1 && index < tasks.length - 1) {
-        [tasks[index + 1], tasks[index]] = [tasks[index], tasks[index + 1]];
-      }
-      renderTasks();
-      syncOrders();
-    }
+    /* =========================================================
+     * 4. 화산파 경지 및 진행도 계산
+     * ========================================================= */
+    function updateRankAndStats() {
+      const total = tasks.length;
+      const completed = tasks.filter(t => t.completed).length;
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    // --- 드래그 앤 드롭 로직 ---
-    let draggedIndex = null;
-
-    function handleDragStart(e, index) {
-      draggedIndex = index;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/html', e.target.parentNode);
-      setTimeout(() => e.target.style.opacity = '0.5', 0);
-    }
-
-    function handleDragOver(e, index) {
-      e.preventDefault();
-      e.currentTarget.classList.add('drag-over');
-    }
-
-    function handleDragLeave(e) {
-      e.currentTarget.classList.remove('drag-over');
-    }
-
-    function handleDrop(e, index) {
-      e.preventDefault();
-      e.currentTarget.classList.remove('drag-over');
-      
-      if (draggedIndex !== null && draggedIndex !== index) {
-        const itemToMove = tasks.splice(draggedIndex, 1)[0];
-        tasks.splice(index, 0, itemToMove);
-        renderTasks();
-        syncOrders();
-      }
-      draggedIndex = null;
-    }
-
-    function handleDragEnd(e) {
-      e.target.style.opacity = '1';
-      document.querySelectorAll('li').forEach(el => el.classList.remove('drag-over'));
-    }
-
-    // --- 계급 및 진행도 업데이트 ---
-    function updateRank() {
-      let currentRank = ranks[0];
-      let nextRank = ranks[1];
-      let rankIndex = 0;
-
-      for (let i = 0; i < ranks.length; i++) {
-        if (completedTotalCount >= ranks[i].req) {
-          currentRank = ranks[i];
-          rankIndex = i;
-          nextRank = ranks[i + 1] || null;
-        } else {
+      // 경지 판정 (완수한 수련 개수 기준)
+      let currentRank = RANKS[0];
+      for (let i = RANKS.length - 1; i >= 0; i--) {
+        if (completed >= RANKS[i].min) {
+          currentRank = RANKS[i];
           break;
         }
       }
 
-      const rankDisplay = document.getElementById('rankDisplay');
-      if (rankDisplay) {
-        rankDisplay.innerText = currentRank.name;
-      }
-      
-      const progressText = document.getElementById('rankProgressText');
-      const progressBar = document.getElementById('rankProgressBar');
+      const rankTitleEl = document.getElementById('rankTitle');
+      const rankBadgeEl = document.getElementById('rankBadge');
+      const taskStatsEl = document.getElementById('taskStats');
+      const progressBarEl = document.getElementById('progressBar');
 
-      if (progressBar && progressText) {
-        if (nextRank) {
-          const prevReq = ranks[rankIndex].req;
-          const nextReq = nextRank.req;
-          const currentProgress = completedTotalCount - prevReq;
-          const requiredForNext = nextReq - prevReq;
-          const percentage = (currentProgress / requiredForNext) * 100;
-          progressBar.style.width = `${percentage}%`;
-          progressText.innerText = `완수: ${completedTotalCount} / 다음 경지(${nextRank.name}): ${nextRank.req}`;
-        } else {
-          progressBar.style.width = '100%';
-          progressBar.classList.replace('from-plum-900', 'from-yellow-600');
-          progressBar.classList.replace('to-plum-500', 'to-yellow-300');
-          progressText.innerText = `완수: ${completedTotalCount} / 화산의 정점에 올랐습니다.`;
-        }
+      if (rankTitleEl) rankTitleEl.textContent = currentRank.title;
+      if (taskStatsEl) taskStatsEl.textContent = `수련 완수: ${completed} / 총 ${total}과 (${percent}%)`;
+      if (progressBarEl) progressBarEl.style.width = `${percent}%`;
+
+      // 뱃지 색상 클래스 적용
+      if (rankBadgeEl) {
+        rankBadgeEl.className = `px-3 py-1 rounded bg-stone-900 border ${currentRank.badge} ${currentRank.color} font-bold text-sm tracking-widest flex items-center gap-1 shadow transition-all duration-300`;
       }
     }
 
-    // --- 화면 렌더링 ---
+    /* =========================================================
+     * 5. 문파 테마 변경 시스템
+     * ========================================================= */
+    function changeTheme(themeName, showNotification = true) {
+      currentTheme = themeName;
+      try {
+        localStorage.setItem(THEME_KEY, themeName);
+      } catch (e) {}
+
+      const banner = document.getElementById('themeBanner');
+      if (!banner) return;
+
+      banner.className = 'h-5 w-full rounded-t-lg shadow-md transition-all duration-500 ';
+      if (themeName === 'plum') {
+        banner.classList.add('plum-pattern');
+        if (showNotification) showToast('화산의 붉은 매화 테마로 전환되었습니다.', '🌸');
+      } else if (themeName === 'zaha') {
+        banner.classList.add('zaha-pattern');
+        if (showNotification) showToast('도가의 비전 · 자하진기 테마로 전환되었습니다.', '🧘');
+      } else if (themeName === 'ink') {
+        banner.classList.add('ink-pattern');
+        if (showNotification) showToast('화산파 심검 · 흑묵 테마로 전환되었습니다.', '墨');
+      } else if (themeName === 'baekui') {
+        banner.classList.add('baekui-pattern');
+        if (showNotification) showToast('화산신룡 청명 테마! "대가리 딱 대라!"', '🍶');
+      }
+
+      if (showNotification) AudioEngine.playSlash();
+    }
+
+    /* =========================================================
+     * 6. 수련 과제 렌더링 (Drag & Drop + 순서 변경 버튼)
+     * ========================================================= */
     function renderTasks() {
-      const list = document.getElementById('taskList');
-      if (!list) return;
-      list.innerHTML = '';
+      const listEl = document.getElementById('taskList');
+      const emptyEl = document.getElementById('emptyState');
+      if (!listEl) return;
 
-      tasks.forEach((task, index) => {
-        const li = document.createElement('li');
-        li.id = `task-${task.id}`;
-        li.className = `draggable flex items-center gap-3 p-4 bg-stone-900 border-2 border-stone-800 rounded-lg transition-all ${task.completed ? 'task-completed' : 'hover:border-stone-600'}`;
-        li.draggable = true;
-        
-        li.addEventListener('dragstart', (e) => handleDragStart(e, index));
-        li.addEventListener('dragover', (e) => handleDragOver(e, index));
-        li.addEventListener('dragleave', handleDragLeave);
-        li.addEventListener('drop', (e) => handleDrop(e, index));
-        li.addEventListener('dragend', handleDragEnd);
+      // 필터 적용
+      const filteredTasks = tasks.map((task, originalIndex) => ({ ...task, originalIndex }))
+        .filter(item => {
+          if (currentFilter === 'active') return !item.completed;
+          if (currentFilter === 'completed') return item.completed;
+          return true;
+        });
 
-        li.innerHTML = `
-          <button onclick="toggleTask('${task.id}')" 
-            class="custom-checkbox w-7 h-7 flex-shrink-0 flex items-center justify-center rounded border-2 border-stone-600 bg-stone-950 transition-colors">
-            ${task.completed ? '<span class="text-plum-400 leading-none">✿</span>' : ''}
-          </button>
-          
-          <div class="flex-1 overflow-hidden cursor-pointer" onclick="toggleTask('${task.id}')">
-            <span class="task-text text-lg inline-block break-all ${task.completed ? 'slash-effect' : ''}">${escapeHtml(task.text)}</span>
-          </div>
+      if (filteredTasks.length === 0) {
+        listEl.innerHTML = '';
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        return;
+      } else {
+        if (emptyEl) emptyEl.classList.add('hidden');
+      }
 
-          <div class="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
-            <div class="flex flex-col gap-1 mr-2">
-              <button onclick="moveTask(${index}, -1)" class="p-1 text-stone-500 hover:text-white bg-stone-800 rounded text-xs" title="위로" ${index === 0 ? 'disabled class="opacity-30"' : ''}>▲</button>
-              <button onclick="moveTask(${index}, 1)" class="p-1 text-stone-500 hover:text-white bg-stone-800 rounded text-xs" title="아래로" ${index === tasks.length - 1 ? 'disabled class="opacity-30"' : ''}>▼</button>
+      listEl.innerHTML = filteredTasks.map((task, filteredIndex) => {
+        const cat = CATEGORIES[task.category] || CATEGORIES.sword;
+        const isCompleted = task.completed;
+        const idx = task.originalIndex;
+
+        return `
+          <li 
+            data-index="${idx}"
+            draggable="true"
+            class="task-card group relative bg-stone-900/90 border ${isCompleted ? 'border-stone-800 bg-stone-950/60 opacity-75' : 'border-stone-800 hover:border-rose-800/60'} rounded-xl p-3.5 transition-all duration-200 shadow-md flex items-center justify-between gap-3 cursor-grab active:cursor-grabbing select-none"
+          >
+            <!-- 왼쪽: 순서 이동 버튼 & 드래그 손잡이 & 매화 검패 체크 버튼 -->
+            <div class="flex items-center gap-1.5 shrink-0">
+              <!-- 모바일/접근성용 위/아래 이동 버튼 -->
+              <div class="flex flex-col gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onclick="moveTask(${idx}, -1); event.stopPropagation();" 
+                  title="위로 이동" 
+                  class="p-0.5 rounded hover:bg-stone-800 text-stone-400 hover:text-rose-400 disabled:opacity-20 cursor-pointer"
+                  ${filteredIndex === 0 ? 'disabled' : ''}
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                </button>
+                <button 
+                  onclick="moveTask(${idx}, 1); event.stopPropagation();" 
+                  title="아래로 이동" 
+                  class="p-0.5 rounded hover:bg-stone-800 text-stone-400 hover:text-rose-400 disabled:opacity-20 cursor-pointer"
+                  ${filteredIndex === filteredTasks.length - 1 ? 'disabled' : ''}
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+              </div>
+
+              <!-- 드래그 손잡이 아이콘 -->
+              <div class="hidden sm:block text-stone-600 group-hover:text-rose-400/80 px-1 cursor-grab">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 6a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm8-16a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100-4 2 2 0 000 4z"/></svg>
+              </div>
+
+              <!-- 매화 검패 스타일 체크 버튼 -->
+              <button 
+                onclick="toggleTask(${idx}); event.stopPropagation();" 
+                class="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 cursor-pointer ${isCompleted ? 'bg-rose-900 border-rose-500 shadow-md shadow-rose-950 scale-105' : 'border-stone-600 hover:border-rose-400 bg-stone-950'}"
+                title="${isCompleted ? '수련 완수됨 (클릭하여 취소)' : '수련 완수'}"
+              >
+                ${isCompleted ? `
+                  <span class="font-calli text-xs text-rose-200">梅</span>
+                ` : `
+                  <span class="w-2 h-2 rounded-full bg-stone-700 group-hover:bg-rose-400 transition-colors"></span>
+                `}
+              </button>
             </div>
-            <button onclick="deleteTask('${task.id}')" class="px-3 py-2 bg-red-950/50 text-red-400 border border-red-900/50 rounded hover:bg-red-900 hover:text-white transition-colors text-sm font-bold">
-              파기
-            </button>
-          </div>
+
+            <!-- 중앙: 수련 과제 내용 및 뱃지 -->
+            <div class="flex-grow min-w-0 px-2 cursor-pointer" onclick="toggleTask(${idx})">
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border ${cat.color} font-medium">
+                  <span>${cat.icon}</span>
+                  <span>${cat.label}</span>
+                </span>
+                ${isCompleted ? `
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-300 border border-rose-700/60 font-bold">
+                    ⚔️ 수련 완수
+                  </span>
+                ` : ''}
+              </div>
+              <p class="text-sm md:text-base font-normal tracking-wide break-words transition-all duration-200 ${isCompleted ? 'line-through text-stone-500 slash-effect italic' : 'text-stone-100'}">
+                ${escapeHtml(task.text)}
+              </p>
+            </div>
+
+            <!-- 오른쪽: 삭제 버튼 -->
+            <div class="shrink-0 flex items-center gap-1">
+              <button 
+                onclick="deleteTask(${idx}); event.stopPropagation();" 
+                class="p-2 rounded-lg text-stone-500 hover:text-rose-400 hover:bg-stone-800 transition-all active:scale-90 cursor-pointer"
+                title="수련 파기 (삭제)"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            </div>
+          </li>
         `;
-        list.appendChild(li);
+      }).join('');
+
+      initDragAndDrop();
+    }
+
+    // HTML 특수문자 이스케이프
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    /* =========================================================
+     * 7. 수련 추가 / 토글 / 이동 / 삭제 로직
+     * ========================================================= */
+    function addTask(text, category) {
+      if (!text || text.trim() === '') return;
+      const newTask = {
+        id: Date.now(),
+        text: text.trim(),
+        category: category || 'sword',
+        completed: false,
+        createdAt: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      };
+      tasks.unshift(newTask);
+      saveTasks();
+      AudioEngine.playDrum();
+      showToast('새로운 수련 과제가 하달되었습니다.', '📜');
+    }
+
+    function toggleTask(index) {
+      if (tasks[index]) {
+        tasks[index].completed = !tasks[index].completed;
+        if (tasks[index].completed) {
+          AudioEngine.playSlash();
+          showToast('매화검기가 만개했습니다! 수련을 완수했습니다.', '🌸');
+        } else {
+          AudioEngine.playSheathe();
+          showToast('수련을 다시 정진 상태로 되돌렸습니다.', '🔄');
+        }
+        saveTasks();
+      }
+    }
+
+    // 위/아래 이동 (Up/Down)
+    function moveTask(index, direction) {
+      if (currentFilter !== 'all') {
+        const filteredTasks = tasks.map((task, originalIndex) => ({ ...task, originalIndex }))
+          .filter(item => {
+            if (currentFilter === 'active') return !item.completed;
+            if (currentFilter === 'completed') return item.completed;
+            return true;
+          });
+        const currentPos = filteredTasks.findIndex(t => t.originalIndex === index);
+        const targetPos = currentPos + direction;
+        if (targetPos < 0 || targetPos >= filteredTasks.length) return;
+        const targetIndex = filteredTasks[targetPos].originalIndex;
+
+        const temp = tasks[index];
+        tasks[index] = tasks[targetIndex];
+        tasks[targetIndex] = temp;
+      } else {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= tasks.length) return;
+
+        const temp = tasks[index];
+        tasks[index] = tasks[targetIndex];
+        tasks[targetIndex] = temp;
+      }
+
+      AudioEngine.playSheathe();
+      saveTasks();
+    }
+
+    function deleteTask(index) {
+      tasks.splice(index, 1);
+      AudioEngine.playSlash();
+      saveTasks();
+      showToast('수련 과제가 파기(삭제)되었습니다.', '🗑️');
+    }
+
+    function clearCompletedTasks() {
+      const completedCount = tasks.filter(t => t.completed).length;
+      if (completedCount === 0) {
+        showToast('정리할 완수된 수련이 없습니다.', 'ℹ️');
+        return;
+      }
+      tasks = tasks.filter(t => !t.completed);
+      AudioEngine.playSlash();
+      saveTasks();
+      showToast(`${completedCount}개의 완수한 수련 일지를 정리했습니다.`, '✨');
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      const tabs = {
+        all: document.getElementById('filterAll'),
+        active: document.getElementById('filterActive'),
+        completed: document.getElementById('filterCompleted')
+      };
+
+      Object.keys(tabs).forEach(key => {
+        if (!tabs[key]) return;
+        if (key === filter) {
+          tabs[key].className = 'px-3 py-1.5 rounded-md font-medium transition-colors bg-stone-800 text-rose-400 cursor-pointer';
+        } else {
+          tabs[key].className = 'px-3 py-1.5 rounded-md font-medium text-stone-400 hover:text-stone-200 transition-colors cursor-pointer';
+        }
+      });
+
+      renderTasks();
+    }
+
+    /* =========================================================
+     * 8. 드래그 앤 드롭 (HTML5 Drag & Drop API)
+     * ========================================================= */
+    function initDragAndDrop() {
+      const listItems = document.querySelectorAll('#taskList > li');
+
+      listItems.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+          draggedItemIndex = parseInt(item.getAttribute('data-index'));
+          item.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        item.addEventListener('dragend', () => {
+          item.classList.remove('dragging');
+          listItems.forEach(el => el.classList.remove('drag-over'));
+        });
+
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          item.classList.add('drag-over');
+        });
+
+        item.addEventListener('dragleave', () => {
+          item.classList.remove('drag-over');
+        });
+
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.classList.remove('drag-over');
+          const targetIndex = parseInt(item.getAttribute('data-index'));
+
+          if (draggedItemIndex !== null && draggedItemIndex !== targetIndex) {
+            const draggedItem = tasks.splice(draggedItemIndex, 1)[0];
+            tasks.splice(targetIndex, 0, draggedItem);
+            AudioEngine.playSheathe();
+            saveTasks();
+            showToast('수련 순서를 재배치했습니다.', '📋');
+          }
+        });
       });
     }
 
-    function updateEmptyMessage() {
-      const msg = document.getElementById('emptyMessage');
-      if (!msg) return;
-      if (tasks.length === 0) {
-        msg.classList.remove('hidden');
-      } else {
-        msg.classList.add('hidden');
-      }
+    /* =========================================================
+     * 9. 맞춤 알림 토스트 (alert 미사용 규정 준수)
+     * ========================================================= */
+    let toastTimeout = null;
+    function showToast(message, icon = '⚔️') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+      if (!toast || !toastMsg) return;
+
+      toastMsg.textContent = message;
+      if (toastIcon) toastIcon.textContent = icon;
+
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2600);
     }
 
-    function escapeHtml(unsafe) {
-      return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    /* =========================================================
+     * 9-1. 4자리 전령 동기화 시스템 (모바일 <-> PC 무선 연동)
+     * ========================================================= */
+    const SYNC_RELAY_BASE = 'https://ntfy.sh/kmt_sync_';
+
+    function getRandom4DigitPin() {
+      return String(Math.floor(1000 + Math.random() * 9000));
     }
 
-    // --- 캔버스 매화꽃 애니메이션 ---
-    const canvas = document.getElementById('plumCanvas');
-    const ctx = canvas ? canvas.getContext('2d') : null;
-    let particles = [];
-    const particleCount = 40;
-
-    function resizeCanvas() {
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    function regenerate4DigitPin() {
+      const pinInput = document.getElementById('sendPinInput');
+      if (pinInput) {
+        pinInput.value = getRandom4DigitPin();
+      }
+      const feedback = document.getElementById('sendFeedback');
+      if (feedback) feedback.classList.add('hidden');
     }
 
-    class PlumPetal {
-      constructor() {
-        this.reset();
-        this.y = Math.random() * (canvas ? canvas.height : 500);
+    function openSyncModal() {
+      const modal = document.getElementById('syncModal');
+      const sendPin = document.getElementById('sendPinInput');
+      const receivePin = document.getElementById('receivePinInput');
+      const exportInput = document.getElementById('exportCodeInput');
+      const importInput = document.getElementById('importCodeInput');
+      const sendFeedback = document.getElementById('sendFeedback');
+      const receiveFeedback = document.getElementById('receiveFeedback');
+
+      if (!modal) return;
+
+      if (sendPin && !sendPin.value) {
+        sendPin.value = getRandom4DigitPin();
       }
+      if (receivePin) receivePin.value = '';
+      if (sendFeedback) sendFeedback.classList.add('hidden');
+      if (receiveFeedback) receiveFeedback.classList.add('hidden');
 
-      reset() {
-        this.x = Math.random() * (canvas ? canvas.width : 500);
-        this.y = -20;
-        this.size = Math.random() * 5 + 3;
-        this.speedY = Math.random() * 1.5 + 0.5;
-        this.speedX = (Math.random() - 0.5) * 1;
-        this.rotation = Math.random() * 360;
-        this.rotationSpeed = (Math.random() - 0.5) * 2;
-        this.opacity = Math.random() * 0.5 + 0.3;
-      }
-
-      update() {
-        this.y += this.speedY;
-        this.x += Math.sin(this.y * 0.01) + this.speedX;
-        this.rotation += this.rotationSpeed;
-
-        if (canvas && (this.y > canvas.height + 20 || this.x < -20 || this.x > canvas.width + 20)) {
-          this.reset();
+      // 오프라인용 긴 코드 준비
+      if (exportInput) {
+        try {
+          const payload = { t: tasks, th: currentTheme, v: 1 };
+          exportInput.value = 'KMT-' + btoa(encodeURIComponent(JSON.stringify(payload)));
+        } catch (e) {
+          exportInput.value = '';
         }
       }
+      if (importInput) importInput.value = '';
 
-      draw() {
-        if (!ctx) return;
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate((this.rotation * Math.PI) / 180);
-        ctx.globalAlpha = this.opacity;
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+      }, 10);
+    }
+
+    function closeSyncModal() {
+      const modal = document.getElementById('syncModal');
+      if (!modal) return;
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    // 4자리 코드로 일지 전송
+    async function uploadBy4DigitPin() {
+      const pinInput = document.getElementById('sendPinInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const sendBtnText = document.getElementById('sendBtnText');
+      const feedback = document.getElementById('sendFeedback');
+      
+      const pin = pinInput ? pinInput.value.trim() : '';
+      if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        showToast('4자리 숫자를 정확히 입력해 주십시오. (예: 1234)', '⚠️');
+        if (pinInput) pinInput.focus();
+        return;
+      }
+
+      if (sendBtn) sendBtn.disabled = true;
+      if (sendBtnText) sendBtnText.textContent = '전송 중...';
+
+      try {
+        const payload = {
+          t: tasks,
+          th: currentTheme,
+          v: 1,
+          time: Date.now()
+        };
+
+        const res = await fetch(SYNC_RELAY_BASE + pin, {
+          method: 'POST',
+          headers: {
+            'Title': 'Kimetsu Tasks Sync',
+            'Priority': '3'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('서버 응답 오류: ' + res.status);
+
+        AudioEngine.playDrum();
+        showToast(`전령 발송 완료! 다른 기기에서 [${pin}]을 입력하세요.`, '🦅');
         
-        ctx.beginPath();
-        ctx.ellipse(0, 0, this.size, this.size / 2, 0, 0, Math.PI * 2);
-        ctx.fillStyle = '#f43f5e';
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size * 0.2, 0, Math.PI * 2);
-        ctx.fillStyle = '#fda4af';
-        ctx.fill();
-        
-        ctx.restore();
+        if (feedback) {
+          feedback.innerHTML = `✅ <strong class="text-amber-400">[${pin}]</strong> 번호로 발송되었습니다.<br>다른 기기(PC나 모바일)에서 이 4자리 번호를 입력하고 [일지 받기]를 누르십시오.`;
+          feedback.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.error('동기화 전송 실패:', err);
+        showToast('전송에 실패했습니다. 네트워크 연결을 확인해 주십시오.', '⚠️');
+        if (feedback) {
+          feedback.innerHTML = `⚠️ 전송 실패: 인터넷 연결을 확인하거나 아래 긴 코드를 복사해 전달하십시오.`;
+          feedback.classList.remove('hidden');
+        }
+      } finally {
+        if (sendBtn) sendBtn.disabled = false;
+        if (sendBtnText) sendBtnText.textContent = '이 번호로 일지 전송';
       }
     }
 
-    function initCanvas() {
+    // 4자리 코드로 일지 받기
+    async function downloadBy4DigitPin() {
+      const pinInput = document.getElementById('receivePinInput');
+      const receiveBtn = document.getElementById('receiveBtn');
+      const receiveBtnText = document.getElementById('receiveBtnText');
+      const feedback = document.getElementById('receiveFeedback');
+
+      const pin = pinInput ? pinInput.value.trim() : '';
+      if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        showToast('4자리 숫자를 입력해 주십시오. (예: 1234)', '⚠️');
+        if (pinInput) pinInput.focus();
+        return;
+      }
+
+      if (receiveBtn) receiveBtn.disabled = true;
+      if (receiveBtnText) receiveBtnText.textContent = '불러오는 중...';
+
+      try {
+        const res = await fetch(`${SYNC_RELAY_BASE}${pin}/json?poll=1&since=latest`);
+        if (!res.ok) throw new Error('데이터 조회 실패');
+
+        const text = await res.text();
+        const lines = text.trim().split('\n');
+        let latestMsg = null;
+
+        for (let i = lines.length - 1; i >= 0; i--) {
+          try {
+            const parsed = JSON.parse(lines[i]);
+            if (parsed.event === 'message' && parsed.message) {
+              latestMsg = parsed.message;
+              break;
+            }
+          } catch (e) {}
+        }
+
+        if (!latestMsg) {
+          throw new Error('해당 번호의 전령 일지를 찾을 수 없습니다.');
+        }
+
+        const data = JSON.parse(latestMsg);
+        if (data && Array.isArray(data.t)) {
+          tasks = data.t;
+          if (data.th) {
+            changeTheme(data.th, false);
+          }
+          saveTasks();
+          closeSyncModal();
+          AudioEngine.playSlash();
+          showToast(`동기화 성공! [${pin}] 번호의 일지를 불러왔습니다.`, '⚔️');
+        } else {
+          throw new Error('일지 데이터 형식이 유효하지 않습니다.');
+        }
+      } catch (err) {
+        console.error('동기화 수신 실패:', err);
+        showToast('일지를 불러오지 못했습니다. 번호를 다시 확인해 주십시오.', '⚠️');
+        if (feedback) {
+          feedback.innerHTML = `⚠️ 불러오기 실패: 다른 기기에서 [${pin}] 번호로 먼저 [일지 전송]을 눌렀는지 확인하십시오.`;
+          feedback.classList.remove('hidden');
+        }
+      } finally {
+        if (receiveBtn) receiveBtn.disabled = false;
+        if (receiveBtnText) receiveBtnText.textContent = '4자리 번호로 일지 받기';
+      }
+    }
+
+    // 기존 수동 긴 코드 복사 & 적용 (오프라인 대체용)
+    function copySyncCode() {
+      const input = document.getElementById('exportCodeInput');
+      if (!input) return;
+      input.select();
+      input.setSelectionRange(0, 99999);
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          AudioEngine.playSheathe();
+          showToast('긴 코드가 복사되었습니다.', '📋');
+        }
+      } catch (err) {}
+    }
+
+    function applyManualCode() {
+      const input = document.getElementById('importCodeInput');
+      if (!input) return;
+      let code = input.value.trim();
+      if (!code) return;
+      if (code.startsWith('KMT-')) code = code.replace(/^KMT-/, '');
+      try {
+        const jsonStr = decodeURIComponent(atob(code));
+        const data = JSON.parse(jsonStr);
+        if (data && Array.isArray(data.t)) {
+          tasks = data.t;
+          if (data.th) changeTheme(data.th, false);
+          saveTasks();
+          closeSyncModal();
+          AudioEngine.playSlash();
+          showToast('동기화 적용 완료!', '⚔️');
+        }
+      } catch (e) {
+        showToast('유효하지 않은 코드입니다.', '⚠️');
+      }
+    }
+
+    /* =========================================================
+     * 10. 배경 애니메이션: 휘날리는 매화 꽃잎 & 검기 파티클 캔버스
+     * ========================================================= */
+    function initCanvasAnimation() {
+      const canvas = document.getElementById('petalCanvas');
       if (!canvas) return;
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-      for (let i = 0; i < particleCount; i++) {
-        particles.push(new PlumPetal());
-      }
-      animateCanvas();
-    }
+      const ctx = canvas.getContext('2d');
 
-    function animateCanvas() {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => {
-        p.update();
-        p.draw();
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
       });
-      requestAnimationFrame(animateCanvas);
+
+      const particles = [];
+      const PARTICLE_COUNT = 38;
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          size: Math.random() * 5 + 3,
+          speedX: Math.random() * 1.5 - 0.5,
+          speedY: Math.random() * 1.2 + 0.6,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.04,
+          opacity: Math.random() * 0.5 + 0.2,
+          type: Math.random() > 0.4 ? 'plum' : 'qi'
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        particles.forEach(p => {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation);
+
+          if (p.type === 'plum') {
+            ctx.fillStyle = `rgba(244, 63, 94, ${p.opacity})`;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.size, p.size * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = `rgba(251, 113, 133, ${p.opacity * 0.85})`;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = '#f43f5e';
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.restore();
+
+          p.x += p.speedX;
+          p.y += p.speedY;
+          p.rotation += p.rotSpeed;
+
+          if (p.y > height + 20) {
+            p.y = -20;
+            p.x = Math.random() * width;
+          }
+          if (p.x > width + 20) {
+            p.x = -20;
+          } else if (p.x < -20) {
+            p.x = width + 20;
+          }
+        });
+
+        requestAnimationFrame(draw);
+      }
+
+      draw();
     }
 
-    // 전역 바인딩
-    window.addTask = addTask;
-    window.toggleTask = toggleTask;
-    window.deleteTask = deleteTask;
-    window.moveTask = moveTask;
-    window.toggleSound = toggleSound;
-    window.handleKeyPress = handleKeyPress;
-
-    // 초기 실행
+    /* =========================================================
+     * 11. 이벤트 리스너 및 초기화
+     * ========================================================= */
     window.addEventListener('DOMContentLoaded', () => {
-      initCanvas();
-      initStorage();
+      // 폼 제출 핸들러
+      const form = document.getElementById('todoForm');
+      const input = document.getElementById('taskInput');
+      const categorySelect = document.getElementById('taskCategory');
+
+      if (form && input) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const text = input.value.trim();
+          if (text) {
+            addTask(text, categorySelect.value);
+            input.value = '';
+            input.focus();
+          }
+        });
+      }
+
+      // 사운드 토글 버튼
+      const soundBtn = document.getElementById('soundToggleBtn');
+      const iconOn = document.getElementById('soundIconOn');
+      const iconOff = document.getElementById('soundIconOff');
+      const statusText = document.getElementById('soundStatusText');
+
+      if (soundBtn) {
+        soundBtn.addEventListener('click', () => {
+          soundEnabled = !soundEnabled;
+          if (soundEnabled) {
+            if (iconOn) iconOn.classList.remove('hidden');
+            if (iconOff) iconOff.classList.add('hidden');
+            if (statusText) statusText.textContent = '매화검명음 ON';
+            AudioEngine.playSlash();
+            showToast('효과음이 켜졌습니다.', '🔊');
+          } else {
+            if (iconOn) iconOn.classList.add('hidden');
+            if (iconOff) iconOff.classList.remove('hidden');
+            if (statusText) statusText.textContent = '효과음 OFF';
+            showToast('효과음이 꺼졌습니다.', '🔇');
+          }
+        });
+      }
+
+      // 음향 설정 복원
+      try {
+        const savedSound = localStorage.getItem(SOUND_KEY);
+        if (savedSound !== null) {
+          soundEnabled = savedSound === 'true';
+          if (!soundEnabled) {
+            if (iconOn) iconOn.classList.add('hidden');
+            if (iconOff) iconOff.classList.remove('hidden');
+            if (statusText) statusText.textContent = '효과음 OFF';
+          }
+        }
+      } catch (e) {}
+
+      // 테마 복원
+      try {
+        const savedTheme = localStorage.getItem(THEME_KEY);
+        if (savedTheme) {
+          changeTheme(savedTheme, false);
+        }
+      } catch (e) {}
+
+      // IndexedDB 영구 보존 엔진 활성화
+      initIndexedDBBackup();
+
+      // 초기 렌더링
+      renderTasks();
+      updateRankAndStats();
+      initCanvasAnimation();
     });
   </script>
 </body>
