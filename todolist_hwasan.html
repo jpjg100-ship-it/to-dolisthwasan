@@ -154,6 +154,11 @@
         </div>
       </div>
 
+      <!-- 수련생 고유 식별패 (클라우드 동기화 상태) -->
+      <div class="text-[11px] text-stone-500 font-mono mb-3 text-right">
+        수련패 식별자: <span id="userBadge" class="text-stone-400">동기화 연결 중...</span>
+      </div>
+
       <div class="flex items-center justify-center gap-4 mb-2 relative z-10">
         <span class="text-plum-600 text-3xl">✿</span>
         <h1 class="text-4xl md:text-5xl font-black text-white ink-shadow tracking-widest">華山派 修練日誌</h1>
@@ -220,16 +225,28 @@
 
   </div>
 
-  <script>
-    // --- 상태 관리 ---
+  <!-- 클라우드 실시간 데이터베이스 연동 모듈 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- 환경 변수 및 클라우드 저장소 설정 ---
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'to-dolisthwasan';
+    let db = null;
+    let auth = null;
+    let user = null;
+    let userId = null;
+
+    // --- 기본 상태 관리 ---
     let tasks = [
-      { id: 'mock1', text: '매화검법(梅花劍法) 1초식 수련', completed: false },
-      { id: 'mock2', text: '연무장 바닥 쓸고 물 긷기', completed: false },
-      { id: 'mock3', text: '청명 사형 피해서 도망치기', completed: false },
-      { id: 'mock4', text: '낙양(洛陽) 은하상단 호위 임무', completed: false }
+      { id: 'mock1', text: '매화검법(梅花劍法) 1초식 수련', completed: false, order: 0 },
+      { id: 'mock2', text: '연무장 바닥 쓸고 물 긷기', completed: false, order: 1 },
+      { id: 'mock3', text: '청명 사형 피해서 도망치기', completed: false, order: 2 },
+      { id: 'mock4', text: '낙양(洛陽) 은하상단 호위 임무', completed: false, order: 3 }
     ];
     let soundEnabled = true;
-    let completedTotalCount = 0; // 평생 완료한 임무 수 (계급용)
+    let completedTotalCount = 0;
 
     // 화산파 계급 시스템
     const ranks = [
@@ -246,34 +263,25 @@
 
     function playSlashSound() {
       if (!soundEnabled) return;
-      
       try {
         if (!audioCtx) {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
         if (audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
 
         const osc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
-        
-        // 날카로운 검격 소리를 위해 톱니파 사용
         osc.type = 'sawtooth';
-        
-        // 주파수를 높게 시작해서 아주 빠르게 떨어뜨림 (베는 느낌)
         osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
-        
-        // 볼륨 설정 (어택과 릴리즈)
         gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
         gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
         
         osc.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        
         osc.start();
         osc.stop(audioCtx.currentTime + 0.2);
       } catch (e) {
@@ -295,7 +303,83 @@
       }
     }
 
-    // --- 핵심 로직 ---
+    // --- 클라우드 데이터베이스 초기화 및 실시간 동기화 ---
+    async function initCloudStorage() {
+      const userBadge = document.getElementById('userBadge');
+      if (typeof __firebase_config === 'undefined') {
+        if (userBadge) userBadge.innerText = '로컬 임시 모드 (배포 환경)';
+        renderTasks();
+        updateRank();
+        return;
+      }
+
+      try {
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // 인증 처리 (커스텀 토큰 우선, 미지정 시 익명 인증)
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        user = auth.currentUser;
+        userId = user ? user.uid : crypto.randomUUID();
+        if (userBadge) {
+          userBadge.innerText = userId;
+        }
+
+        // 1. 임무 목록 실시간 동기화 리스너 등록
+        const tasksCol = collection(db, 'artifacts', appId, 'users', userId, 'tasks');
+        const tasksQuery = query(tasksCol);
+        
+        onSnapshot(tasksQuery, async (snapshot) => {
+          if (snapshot.empty) {
+            // 저장된 임무가 없으면 기본 임무 목록을 클라우드에 초기 등록
+            for (let i = 0; i < tasks.length; i++) {
+              const item = tasks[i];
+              const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', item.id);
+              await setDoc(docRef, item);
+            }
+          } else {
+            const fetchedTasks = [];
+            snapshot.forEach((docSnap) => {
+              fetchedTasks.push(docSnap.data());
+            });
+            // JS 메모리 내에서 순서 정렬
+            fetchedTasks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            tasks = fetchedTasks;
+            renderTasks();
+            updateEmptyMessage();
+          }
+        }, (error) => {
+          console.error("임무 데이터 동기화 실패:", error);
+        });
+
+        // 2. 수련 경지(완료 총합) 프로필 동기화 리스너 등록
+        const statsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'stats');
+        onSnapshot(statsDocRef, (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            if (typeof data.completedTotalCount === 'number') {
+              completedTotalCount = data.completedTotalCount;
+              updateRank();
+            }
+          }
+        }, (error) => {
+          console.error("경지 데이터 동기화 실패:", error);
+        });
+
+      } catch (err) {
+        console.error("클라우드 저장소 연동 오류:", err);
+        if (userBadge) userBadge.innerText = '연동 오류 (임시 모드)';
+      }
+    }
+
+    // --- 할 일 로직 ---
     function handleKeyPress(e) {
       if (e.key === 'Enter') {
         addTask();
@@ -306,25 +390,35 @@
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
-    function addTask() {
+    async function addTask() {
       const input = document.getElementById('taskInput');
       const text = input.value.trim();
-      
       if (!text) return;
 
       const newTask = {
         id: generateId(),
         text: text,
-        completed: false
+        completed: false,
+        order: tasks.length > 0 ? Math.min(...tasks.map(t => t.order ?? 0)) - 1 : 0
       };
 
-      tasks.unshift(newTask); // 최상단에 추가
+      tasks.unshift(newTask);
       input.value = '';
       renderTasks();
       updateEmptyMessage();
+
+      // 클라우드 저장소에 반영
+      if (user && db) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', newTask.id);
+          await setDoc(docRef, newTask);
+        } catch (err) {
+          console.error("임무 저장 실패:", err);
+        }
+      }
     }
 
-    function toggleTask(id) {
+    async function toggleTask(id) {
       const taskIndex = tasks.findIndex(t => t.id === id);
       if (taskIndex === -1) return;
 
@@ -332,62 +426,94 @@
       const isCompleting = !task.completed;
       task.completed = isCompleting;
 
-      // 화면 업데이트 (애니메이션을 위해 렌더링 방식 조정)
       const li = document.getElementById(`task-${id}`);
-      
-      if (isCompleting) {
-        playSlashSound();
-        completedTotalCount++;
-        updateRank();
-        
-        // 텍스트 영역에 클래스 추가하여 애니메이션 트리거
-        const textSpan = li.querySelector('.task-text');
-        textSpan.classList.add('slash-effect');
-        li.classList.add('task-completed');
-      } else {
-        const textSpan = li.querySelector('.task-text');
-        textSpan.classList.remove('slash-effect');
-        li.classList.remove('task-completed');
-        // 계급 차감은 선택사항이나 여기선 긍정적 경험을 위해 차감하지 않거나 
-        // 완벽한 계산을 원하면 차감할 수 있음. (여기선 차감)
-        completedTotalCount = Math.max(0, completedTotalCount - 1);
-        updateRank();
+      if (li) {
+        if (isCompleting) {
+          playSlashSound();
+          completedTotalCount++;
+          updateRank();
+          const textSpan = li.querySelector('.task-text');
+          if (textSpan) textSpan.classList.add('slash-effect');
+          li.classList.add('task-completed');
+        } else {
+          const textSpan = li.querySelector('.task-text');
+          if (textSpan) textSpan.classList.remove('slash-effect');
+          li.classList.remove('task-completed');
+          completedTotalCount = Math.max(0, completedTotalCount - 1);
+          updateRank();
+        }
+
+        const checkbox = li.querySelector('.custom-checkbox');
+        if (checkbox) {
+          if (isCompleting) {
+            checkbox.innerHTML = '<span class="text-plum-400">✿</span>';
+            checkbox.classList.add('border-plum-500');
+          } else {
+            checkbox.innerHTML = '';
+            checkbox.classList.remove('border-plum-500');
+          }
+        }
       }
-      
-      // 상태 변경 후 체크박스 UI 업데이트
-      const checkbox = li.querySelector('.custom-checkbox');
-      if(isCompleting) {
-        checkbox.innerHTML = '<span class="text-plum-400">✿</span>';
-        checkbox.classList.add('border-plum-500');
-      } else {
-        checkbox.innerHTML = '';
-        checkbox.classList.remove('border-plum-500');
+
+      // 클라우드 저장소 상태 갱신
+      if (user && db) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', id);
+          await updateDoc(docRef, { completed: task.completed });
+
+          const statsRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'stats');
+          await setDoc(statsRef, { completedTotalCount }, { merge: true });
+        } catch (err) {
+          console.error("임무 상태 갱신 실패:", err);
+        }
       }
     }
 
-    function deleteTask(id) {
-      // 파기 시 시각적 효과 (사라짐 애니메이션)
+    async function deleteTask(id) {
       const li = document.getElementById(`task-${id}`);
-      li.style.transform = 'scale(0.9)';
-      li.style.opacity = '0';
+      if (li) {
+        li.style.transform = 'scale(0.9)';
+        li.style.opacity = '0';
+      }
       
-      setTimeout(() => {
+      setTimeout(async () => {
         tasks = tasks.filter(t => t.id !== id);
         renderTasks();
         updateEmptyMessage();
+
+        // 클라우드 저장소에서 삭제
+        if (user && db) {
+          try {
+            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', id);
+            await deleteDoc(docRef);
+          } catch (err) {
+            console.error("임무 삭제 실패:", err);
+          }
+        }
       }, 200);
     }
 
-    // 순서 이동 (버튼)
+    async function syncOrders() {
+      if (!user || !db) return;
+      try {
+        for (let i = 0; i < tasks.length; i++) {
+          tasks[i].order = i;
+          const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', tasks[i].id);
+          await updateDoc(docRef, { order: i });
+        }
+      } catch (err) {
+        console.error("순서 동기화 실패:", err);
+      }
+    }
+
     function moveTask(index, direction) {
       if (direction === -1 && index > 0) {
-        // 위로 이동
         [tasks[index - 1], tasks[index]] = [tasks[index], tasks[index - 1]];
       } else if (direction === 1 && index < tasks.length - 1) {
-        // 아래로 이동
         [tasks[index + 1], tasks[index]] = [tasks[index], tasks[index + 1]];
       }
       renderTasks();
+      syncOrders();
     }
 
     // --- 드래그 앤 드롭 로직 ---
@@ -402,25 +528,22 @@
 
     function handleDragOver(e, index) {
       e.preventDefault();
-      const li = e.currentTarget;
-      li.classList.add('drag-over');
+      e.currentTarget.classList.add('drag-over');
     }
 
     function handleDragLeave(e) {
-      const li = e.currentTarget;
-      li.classList.remove('drag-over');
+      e.currentTarget.classList.remove('drag-over');
     }
 
     function handleDrop(e, index) {
       e.preventDefault();
-      const li = e.currentTarget;
-      li.classList.remove('drag-over');
+      e.currentTarget.classList.remove('drag-over');
       
       if (draggedIndex !== null && draggedIndex !== index) {
-        // 배열 항목 위치 스왑 (잘라내서 끼워넣기)
         const itemToMove = tasks.splice(draggedIndex, 1)[0];
         tasks.splice(index, 0, itemToMove);
         renderTasks();
+        syncOrders();
       }
       draggedIndex = null;
     }
@@ -429,7 +552,6 @@
       e.target.style.opacity = '1';
       document.querySelectorAll('li').forEach(el => el.classList.remove('drag-over'));
     }
-
 
     // --- 계급 및 진행도 업데이트 ---
     function updateRank() {
@@ -455,27 +577,28 @@
       const progressText = document.getElementById('rankProgressText');
       const progressBar = document.getElementById('rankProgressBar');
 
-      if (nextRank) {
-        const prevReq = ranks[rankIndex].req;
-        const nextReq = nextRank.req;
-        const currentProgress = completedTotalCount - prevReq;
-        const requiredForNext = nextReq - prevReq;
-        
-        const percentage = (currentProgress / requiredForNext) * 100;
-        progressBar.style.width = `${percentage}%`;
-        progressText.innerText = `완수: ${completedTotalCount} / 다음 경지(${nextRank.name}): ${nextRank.req}`;
-      } else {
-        // 최고 계급
-        progressBar.style.width = '100%';
-        progressBar.classList.replace('from-plum-900', 'from-yellow-600');
-        progressBar.classList.replace('to-plum-500', 'to-yellow-300');
-        progressText.innerText = `완수: ${completedTotalCount} / 화산의 정점에 올랐습니다.`;
+      if (progressBar && progressText) {
+        if (nextRank) {
+          const prevReq = ranks[rankIndex].req;
+          const nextReq = nextRank.req;
+          const currentProgress = completedTotalCount - prevReq;
+          const requiredForNext = nextReq - prevReq;
+          const percentage = (currentProgress / requiredForNext) * 100;
+          progressBar.style.width = `${percentage}%`;
+          progressText.innerText = `완수: ${completedTotalCount} / 다음 경지(${nextRank.name}): ${nextRank.req}`;
+        } else {
+          progressBar.style.width = '100%';
+          progressBar.classList.replace('from-plum-900', 'from-yellow-600');
+          progressBar.classList.replace('to-plum-500', 'to-yellow-300');
+          progressText.innerText = `완수: ${completedTotalCount} / 화산의 정점에 올랐습니다.`;
+        }
       }
     }
 
     // --- 화면 렌더링 ---
     function renderTasks() {
       const list = document.getElementById('taskList');
+      if (!list) return;
       list.innerHTML = '';
 
       tasks.forEach((task, index) => {
@@ -484,7 +607,6 @@
         li.className = `draggable flex items-center gap-3 p-4 bg-stone-900 border-2 border-stone-800 rounded-lg transition-all ${task.completed ? 'task-completed' : 'hover:border-stone-600'}`;
         li.draggable = true;
         
-        // 드래그 이벤트 리스너 부착
         li.addEventListener('dragstart', (e) => handleDragStart(e, index));
         li.addEventListener('dragover', (e) => handleDragOver(e, index));
         li.addEventListener('dragleave', handleDragLeave);
@@ -492,18 +614,15 @@
         li.addEventListener('dragend', handleDragEnd);
 
         li.innerHTML = `
-          <!-- 체크박스 대체 UI -->
           <button onclick="toggleTask('${task.id}')" 
             class="custom-checkbox w-7 h-7 flex-shrink-0 flex items-center justify-center rounded border-2 border-stone-600 bg-stone-950 transition-colors">
             ${task.completed ? '<span class="text-plum-400 leading-none">✿</span>' : ''}
           </button>
           
-          <!-- 내용 -->
           <div class="flex-1 overflow-hidden cursor-pointer" onclick="toggleTask('${task.id}')">
             <span class="task-text text-lg inline-block break-all ${task.completed ? 'slash-effect' : ''}">${escapeHtml(task.text)}</span>
           </div>
 
-          <!-- 컨트롤 버튼 -->
           <div class="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
             <div class="flex flex-col gap-1 mr-2">
               <button onclick="moveTask(${index}, -1)" class="p-1 text-stone-500 hover:text-white bg-stone-800 rounded text-xs" title="위로" ${index === 0 ? 'disabled class="opacity-30"' : ''}>▲</button>
@@ -520,6 +639,7 @@
 
     function updateEmptyMessage() {
       const msg = document.getElementById('emptyMessage');
+      if (!msg) return;
       if (tasks.length === 0) {
         msg.classList.remove('hidden');
       } else {
@@ -536,13 +656,14 @@
         .replace(/'/g, "&#039;");
     }
 
-    // --- 캔버스 매화꽃 애니메이션 (파티클 시스템) ---
+    // --- 캔버스 매화꽃 애니메이션 ---
     const canvas = document.getElementById('plumCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas ? canvas.getContext('2d') : null;
     let particles = [];
-    const particleCount = 40; // 화면에 보이는 매화꽃 수
+    const particleCount = 40;
 
     function resizeCanvas() {
+      if (!canvas) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
@@ -550,15 +671,15 @@
     class PlumPetal {
       constructor() {
         this.reset();
-        this.y = Math.random() * canvas.height; // 초기엔 화면 전역에 분포
+        this.y = Math.random() * (canvas ? canvas.height : 500);
       }
 
       reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = -20; // 위에서 시작
-        this.size = Math.random() * 5 + 3; // 크기
-        this.speedY = Math.random() * 1.5 + 0.5; // 떨어지는 속도
-        this.speedX = (Math.random() - 0.5) * 1; // 좌우 흔들림
+        this.x = Math.random() * (canvas ? canvas.width : 500);
+        this.y = -20;
+        this.size = Math.random() * 5 + 3;
+        this.speedY = Math.random() * 1.5 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 1;
         this.rotation = Math.random() * 360;
         this.rotationSpeed = (Math.random() - 0.5) * 2;
         this.opacity = Math.random() * 0.5 + 0.3;
@@ -566,27 +687,26 @@
 
       update() {
         this.y += this.speedY;
-        this.x += Math.sin(this.y * 0.01) + this.speedX; // 바람에 흔들리는 효과
+        this.x += Math.sin(this.y * 0.01) + this.speedX;
         this.rotation += this.rotationSpeed;
 
-        if (this.y > canvas.height + 20 || this.x < -20 || this.x > canvas.width + 20) {
+        if (canvas && (this.y > canvas.height + 20 || this.x < -20 || this.x > canvas.width + 20)) {
           this.reset();
         }
       }
 
       draw() {
+        if (!ctx) return;
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate((this.rotation * Math.PI) / 180);
         ctx.globalAlpha = this.opacity;
         
-        // 매화잎 그리기 (간단한 타원)
         ctx.beginPath();
         ctx.ellipse(0, 0, this.size, this.size / 2, 0, 0, Math.PI * 2);
-        ctx.fillStyle = '#f43f5e'; // 매화 진홍색
+        ctx.fillStyle = '#f43f5e';
         ctx.fill();
         
-        // 꽃잎 중심 포인트
         ctx.beginPath();
         ctx.arc(0, 0, this.size * 0.2, 0, Math.PI * 2);
         ctx.fillStyle = '#fda4af';
@@ -597,34 +717,41 @@
     }
 
     function initCanvas() {
+      if (!canvas) return;
       resizeCanvas();
       window.addEventListener('resize', resizeCanvas);
-      
       for (let i = 0; i < particleCount; i++) {
         particles.push(new PlumPetal());
       }
-      
       animateCanvas();
     }
 
     function animateCanvas() {
+      if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
       particles.forEach(p => {
         p.update();
         p.draw();
       });
-      
       requestAnimationFrame(animateCanvas);
     }
 
-    // --- 초기화 ---
-    window.onload = () => {
-      renderTasks(); // 초기 임무 목록을 화면에 그립니다.
+    // 전역 HTML 이벤트 핸들러 바인딩
+    window.addTask = addTask;
+    window.toggleTask = toggleTask;
+    window.deleteTask = deleteTask;
+    window.moveTask = moveTask;
+    window.toggleSound = toggleSound;
+    window.handleKeyPress = handleKeyPress;
+
+    // 초기 실행
+    window.addEventListener('DOMContentLoaded', () => {
+      renderTasks();
       updateEmptyMessage();
       updateRank();
       initCanvas();
-    };
+      initCloudStorage();
+    });
   </script>
 </body>
 </html>
