@@ -225,20 +225,19 @@
 
   </div>
 
-  <!-- 클라우드 실시간 데이터베이스 연동 모듈 -->
+  <!-- 데이터 영구 보존 및 클라우드 연동 모듈 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // --- 환경 변수 및 클라우드 저장소 설정 ---
+    // --- 기본 상태 관리 ---
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'to-dolisthwasan';
     let db = null;
     let auth = null;
     let user = null;
     let userId = null;
 
-    // --- 기본 상태 관리 ---
     let tasks = [
       { id: 'mock1', text: '매화검법(梅花劍法) 1초식 수련', completed: false, order: 0 },
       { id: 'mock2', text: '연무장 바닥 쓸고 물 긷기', completed: false, order: 1 },
@@ -285,7 +284,7 @@
         osc.start();
         osc.stop(audioCtx.currentTime + 0.2);
       } catch (e) {
-        console.log("오디오 재생 실패", e);
+        console.log("오디오 재생 불가:", e);
       }
     }
 
@@ -303,23 +302,137 @@
       }
     }
 
-    // --- 클라우드 데이터베이스 초기화 및 실시간 동기화 ---
-    async function initCloudStorage() {
+    // --- 브라우저 자체 영구 보존 엔진 (IndexedDB) ---
+    const DB_NAME = 'HwasanTodoDB';
+    const DB_VERSION = 1;
+    let localDB = null;
+
+    function initLocalDatabase() {
+      return new Promise((resolve) => {
+        if (!window.indexedDB) {
+          resolve(null);
+          return;
+        }
+        const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const dbInstance = e.target.result;
+          if (!dbInstance.objectStoreNames.contains('tasks')) {
+            dbInstance.createObjectStore('tasks', { keyPath: 'id' });
+          }
+          if (!dbInstance.objectStoreNames.contains('stats')) {
+            dbInstance.createObjectStore('stats', { keyPath: 'key' });
+          }
+        };
+        request.onsuccess = (e) => {
+          localDB = e.target.result;
+          resolve(localDB);
+        };
+        request.onerror = () => {
+          resolve(null);
+        };
+      });
+    }
+
+    function loadFromLocalDatabase() {
+      return new Promise((resolve) => {
+        if (!localDB) {
+          resolve(false);
+          return;
+        }
+        try {
+          const tx = localDB.transaction(['tasks', 'stats'], 'readonly');
+          const taskStore = tx.objectStore('tasks');
+          const statsStore = tx.objectStore('stats');
+
+          const tasksReq = taskStore.getAll();
+          const statsReq = statsStore.get('completedTotalCount');
+
+          tx.oncomplete = () => {
+            let hasLoadedData = false;
+            if (tasksReq.result && tasksReq.result.length > 0) {
+              tasks = tasksReq.result;
+              tasks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+              hasLoadedData = true;
+            }
+            if (statsReq.result && typeof statsReq.result.val === 'number') {
+              completedTotalCount = statsReq.result.val;
+            }
+            resolve(hasLoadedData);
+          };
+          tx.onerror = () => resolve(false);
+        } catch (e) {
+          resolve(false);
+        }
+      });
+    }
+
+    function saveLocalTask(task) {
+      if (!localDB) return;
+      try {
+        const tx = localDB.transaction('tasks', 'readwrite');
+        tx.objectStore('tasks').put(task);
+      } catch (e) {}
+    }
+
+    function deleteLocalTask(id) {
+      if (!localDB) return;
+      try {
+        const tx = localDB.transaction('tasks', 'readwrite');
+        tx.objectStore('tasks').delete(id);
+      } catch (e) {}
+    }
+
+    function saveAllLocalTasks() {
+      if (!localDB) return;
+      try {
+        const tx = localDB.transaction('tasks', 'readwrite');
+        const store = tx.objectStore('tasks');
+        store.clear();
+        tasks.forEach(t => store.put(t));
+      } catch (e) {}
+    }
+
+    function saveLocalStats() {
+      if (!localDB) return;
+      try {
+        const tx = localDB.transaction('stats', 'readwrite');
+        tx.objectStore('stats').put({ key: 'completedTotalCount', val: completedTotalCount });
+      } catch (e) {}
+    }
+
+    // --- 클라우드 & 로컬 통합 스토리지 초기화 ---
+    async function initStorage() {
       const userBadge = document.getElementById('userBadge');
+      
+      // 1. 브라우저 영구 보존 엔진 초기화 및 기존 수련 일지 복원
+      await initLocalDatabase();
+      const hasSavedData = await loadFromLocalDatabase();
+
+      if (!hasSavedData) {
+        // 첫 방문 시 기본 임무를 브라우저에 저장
+        saveAllLocalTasks();
+        saveLocalStats();
+      }
+
+      renderTasks();
+      updateEmptyMessage();
+      updateRank();
+
+      // 2. 외부 배포 환경(GitHub Pages)인 경우 안내 배지 표시
       if (typeof __firebase_config === 'undefined') {
-        if (userBadge) userBadge.innerText = '로컬 임시 모드 (배포 환경)';
-        renderTasks();
-        updateRank();
+        if (userBadge) {
+          userBadge.innerText = '수련생 처소 (브라우저 영구 보존 중)';
+        }
         return;
       }
 
+      // 3. 클라우드 설정이 존재하는 환경일 경우 실시간 클라우드 동기화 수행
       try {
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
 
-        // 인증 처리 (커스텀 토큰 우선, 미지정 시 익명 인증)
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
@@ -332,54 +445,46 @@
           userBadge.innerText = userId;
         }
 
-        // 1. 임무 목록 실시간 동기화 리스너 등록
         const tasksCol = collection(db, 'artifacts', appId, 'users', userId, 'tasks');
         const tasksQuery = query(tasksCol);
-        
+
         onSnapshot(tasksQuery, async (snapshot) => {
           if (snapshot.empty) {
-            // 저장된 임무가 없으면 기본 임무 목록을 클라우드에 초기 등록
             for (let i = 0; i < tasks.length; i++) {
               const item = tasks[i];
               const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', item.id);
               await setDoc(docRef, item);
             }
           } else {
-            const fetchedTasks = [];
-            snapshot.forEach((docSnap) => {
-              fetchedTasks.push(docSnap.data());
-            });
-            // JS 메모리 내에서 순서 정렬
-            fetchedTasks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-            tasks = fetchedTasks;
+            const fetched = [];
+            snapshot.forEach((snap) => fetched.push(snap.data()));
+            fetched.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            tasks = fetched;
+            saveAllLocalTasks();
             renderTasks();
             updateEmptyMessage();
           }
-        }, (error) => {
-          console.error("임무 데이터 동기화 실패:", error);
-        });
+        }, (err) => console.error("클라우드 임무 동기화 실패:", err));
 
-        // 2. 수련 경지(완료 총합) 프로필 동기화 리스너 등록
         const statsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'stats');
         onSnapshot(statsDocRef, (snap) => {
           if (snap.exists()) {
             const data = snap.data();
             if (typeof data.completedTotalCount === 'number') {
               completedTotalCount = data.completedTotalCount;
+              saveLocalStats();
               updateRank();
             }
           }
-        }, (error) => {
-          console.error("경지 데이터 동기화 실패:", error);
-        });
+        }, (err) => console.error("클라우드 경지 동기화 실패:", err));
 
       } catch (err) {
-        console.error("클라우드 저장소 연동 오류:", err);
-        if (userBadge) userBadge.innerText = '연동 오류 (임시 모드)';
+        console.warn("클라우드 연동 건너뜀 (로컬 영구 모드로 동작):", err);
+        if (userBadge) userBadge.innerText = '수련생 처소 (브라우저 영구 보존 중)';
       }
     }
 
-    // --- 할 일 로직 ---
+    // --- 할 일(임무) 조작 로직 ---
     function handleKeyPress(e) {
       if (e.key === 'Enter') {
         addTask();
@@ -407,13 +512,16 @@
       renderTasks();
       updateEmptyMessage();
 
-      // 클라우드 저장소에 반영
+      // 브라우저 영구 보존
+      saveLocalTask(newTask);
+
+      // 클라우드 저장
       if (user && db) {
         try {
           const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', newTask.id);
           await setDoc(docRef, newTask);
         } catch (err) {
-          console.error("임무 저장 실패:", err);
+          console.error("클라우드 임무 저장 실패:", err);
         }
       }
     }
@@ -455,7 +563,11 @@
         }
       }
 
-      // 클라우드 저장소 상태 갱신
+      // 브라우저 영구 보존
+      saveLocalTask(task);
+      saveLocalStats();
+
+      // 클라우드 저장
       if (user && db) {
         try {
           const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', id);
@@ -464,7 +576,7 @@
           const statsRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'stats');
           await setDoc(statsRef, { completedTotalCount }, { merge: true });
         } catch (err) {
-          console.error("임무 상태 갱신 실패:", err);
+          console.error("클라우드 임무 갱신 실패:", err);
         }
       }
     }
@@ -481,19 +593,26 @@
         renderTasks();
         updateEmptyMessage();
 
-        // 클라우드 저장소에서 삭제
+        // 브라우저 영구 삭제
+        deleteLocalTask(id);
+
+        // 클라우드 삭제
         if (user && db) {
           try {
             const docRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', id);
             await deleteDoc(docRef);
           } catch (err) {
-            console.error("임무 삭제 실패:", err);
+            console.error("클라우드 임무 삭제 실패:", err);
           }
         }
       }, 200);
     }
 
     async function syncOrders() {
+      // 브라우저 순서 보존
+      saveAllLocalTasks();
+
+      // 클라우드 순서 보존
       if (!user || !db) return;
       try {
         for (let i = 0; i < tasks.length; i++) {
@@ -736,7 +855,7 @@
       requestAnimationFrame(animateCanvas);
     }
 
-    // 전역 HTML 이벤트 핸들러 바인딩
+    // 전역 바인딩
     window.addTask = addTask;
     window.toggleTask = toggleTask;
     window.deleteTask = deleteTask;
@@ -746,11 +865,8 @@
 
     // 초기 실행
     window.addEventListener('DOMContentLoaded', () => {
-      renderTasks();
-      updateEmptyMessage();
-      updateRank();
       initCanvas();
-      initCloudStorage();
+      initStorage();
     });
   </script>
 </body>
